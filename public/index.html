@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" id="theme-color" content="#f5f5fa">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Lynceus Aero</title>
+  <!-- Runs sync before CSS paints — prevents flash of wrong theme -->
+  <script>
+    document.documentElement.setAttribute('data-theme',
+      localStorage.getItem('lynceus_theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+    );
+  </script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M21 15.5v-1.8l-7.2-4.5V3.5a1.3 1.3 0 1 0-2.6 0v5.7L4 13.7v1.8l7.2-2.25V18l-1.8 1.35V21l3.15-.9 3.15.9v-1.65L13.8 18v-5.25L21 15.5z" fill="currentColor"/>
+        <line x1="3" y1="21" x2="21" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-name">Lynceus <span class="brand-aero">Aero</span></span>
+    </div>
+    <div class="header-right">
+      <span class="live-badge" id="live-badge">
+        <span class="live-dot"></span>
+        <span>EN VIVO</span>
+      </span>
+      <span class="last-updated" id="last-updated"></span>
+      <button class="theme-btn" id="theme-btn" aria-label="Cambiar tema"></button>
+    </div>
+  </header>
+
+  <div class="airport-bar">
+    <select id="airport-select" class="airport-select" aria-label="Seleccionar aeropuerto">
+      <option value="Cobija">Cobija · CIJ</option>
+      <option value="Jorge Wilstermann">Cochabamba · CBB</option>
+      <option value="El ALTo">El Alto · LPB</option>
+      <option value="Guayamerin">Guayaramerín · GYA</option>
+      <option value="Oruro">Oruro · ORU</option>
+      <option value="Potosi">Potosí · POI</option>
+      <option value="Riberalta">Riberalta · RIB</option>
+      <option value="Rurrenabaque">Rurrenabaque · RBQ</option>
+      <option value="Viru Viru">Santa Cruz · VVI</option>
+      <option value="Sucre">Sucre · SRE</option>
+      <option value="Tarija">Tarija · TJA</option>
+      <option value="Trinidad">Trinidad · TDD</option>
+      <option value="Uyuni">Uyuni · UYU</option>
+      <option value="Yacuiba">Yacuiba · BYC</option>
+    </select>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-tipo="L" role="tab" aria-selected="true">
+      <span class="tab-emoji" aria-hidden="true">🛬</span>
+      Llegadas
+    </button>
+    <button class="tab" data-tipo="S" role="tab" aria-selected="false">
+      <span class="tab-emoji" aria-hidden="true">🛫</span>
+      Salidas
+    </button>
+    <div class="tab-indicator" aria-hidden="true"></div>
+  </div>
+
+  <div class="search-bar" id="search-bar">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" width="15" height="15" fill="none" aria-hidden="true">
+        <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.75"/>
+        <path d="M13 13l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+      </svg>
+      <input class="search-input" id="search-input" type="search" placeholder="Vuelo, destino o aerolínea…" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="search-clear" id="search-clear" aria-label="Limpiar búsqueda" tabindex="-1">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="sort-bar" id="sort-bar" role="group" aria-label="Ordenar vuelos">
+    <button class="sort-pill active" data-sort="time">Hora</button>
+    <button class="sort-pill" data-sort="delayed">Demorados primero</button>
+    <button class="sort-pill" data-sort="airline">Aerolínea</button>
+  </div>
+
+  <div class="summary-strip" id="summary-strip" aria-live="polite"></div>
+
+  <main id="flights-list" class="flights-list" role="list" aria-live="polite" aria-label="Lista de vuelos">
+  </main>
+
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal-sheet" id="modal-sheet" role="dialog" aria-modal="true">
+      <div class="modal-handle" aria-hidden="true"></div>
+      <button class="modal-close" id="modal-close" aria-label="Cerrar">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
+          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
