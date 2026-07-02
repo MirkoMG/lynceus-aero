@@ -76,16 +76,23 @@ function togglePin(flightNum) {
 }
 
 // ── URL state ───────────────────────────────────────────
+const SORT_MODES = ['time', 'delayed', 'airline'];
+
 function readURLState() {
   const p = new URLSearchParams(window.location.search);
+  const sort = p.get('sort');
   return {
     airport: p.get('aero') || 'El ALTo',
-    tipo:    p.get('tipo') || 'L',
+    tipo:    p.get('tipo') === 'S' ? 'S' : 'L',
+    sort:    SORT_MODES.includes(sort) ? sort : 'time',
+    search:  p.get('q') || '',
   };
 }
 
 function writeURLState() {
   const p = new URLSearchParams({ aero: state.airport, tipo: state.tipo });
+  if (state.sort !== 'time') p.set('sort', state.sort);
+  if (state.search.trim())   p.set('q', state.search.trim());
   history.replaceState(null, '', `?${p}`);
 }
 
@@ -126,6 +133,30 @@ function formatDelay(sched, actual) {
   return m ? `+${h}h ${m}m` : `+${h}h`;
 }
 
+// Minutes from now until HH:MM, assuming the nearest day (API has no date)
+function relMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return null;
+  const now = new Date();
+  let diff = h * 60 + m - (now.getHours() * 60 + now.getMinutes());
+  if (diff < -720) diff += 1440;
+  if (diff > 720)  diff -= 1440;
+  return diff;
+}
+
+function relTimeLabel(flight, statusKey) {
+  if (['arrived', 'departed', 'cancelled'].includes(statusKey)) return '';
+  const t = (flight.HORA_REAL || '').trim() || (flight.HORA_ESTIMADA || '').trim();
+  const diff = relMinutes(t);
+  if (diff === null || diff < -20 || diff > 360) return '';
+  if (diff <= 1)  return 'ahora';
+  if (diff < 60)  return `en ${diff} min`;
+  const h = Math.floor(diff / 60);
+  const m = diff % 60;
+  return m ? `en ${h}h ${m}m` : `en ${h}h`;
+}
+
 const STATUS_DOT = {
   'on-time':   { color: 'green', pulse: true  },
   'confirmed': { color: 'green', pulse: true  },
@@ -163,7 +194,8 @@ function parseRoute(ruta0, ruta) {
     .replace(/\s*-\s*/g, '|')
     .replace(/\s{2,}/g, ' ');
 
-  const stops = raw.split('|').map(s => s.trim()).filter(Boolean);
+  // The API pads routes with numeric placeholders like "000" — drop them
+  const stops = raw.split('|').map(s => s.trim()).filter(s => s && !/^\d+$/.test(s));
   if (stops.length <= 1) return { label: titleCase(stops[0] || '—'), stops: [], intermediateCount: 0 };
 
   const titled = stops.map(titleCase);
@@ -177,15 +209,19 @@ function parseRoute(ruta0, ruta) {
 }
 
 // ── Search / filter ─────────────────────────────────────
+// Accent-insensitive: "potosi" matches "Potosí"
+function norm(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function filterFlights(flights) {
-  const q = state.search.trim().toLowerCase();
+  const q = norm(state.search.trim());
   if (!q) return flights;
-  return flights.filter(f => {
-    const dest    = (f.RUTA0 || f.RUTA || '').toLowerCase();
-    const num     = (f.NRO_VUELO || '').toLowerCase();
-    const airline = (f.NOMBRE_AEROLINEA || '').toLowerCase();
-    return dest.includes(q) || num.includes(q) || airline.includes(q);
-  });
+  return flights.filter(f =>
+    norm(f.RUTA0 || f.RUTA).includes(q) ||
+    norm(f.NRO_VUELO).includes(q) ||
+    norm(f.NOMBRE_AEROLINEA).includes(q)
+  );
 }
 
 // ── Sort ────────────────────────────────────────────────
@@ -213,7 +249,28 @@ function sortFlights(flights, mode) {
   return [...pinned, ...sorted];
 }
 
+// Clipboard with a legacy fallback for contexts where the async API is unavailable
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { return document.execCommand('copy'); }
+    catch { return false; }
+    finally { ta.remove(); }
+  }
+}
+
 // ── Modal ───────────────────────────────────────────────
+let lastFocusedEl = null;
+
 function openModal(flight) {
   const route     = parseRoute(flight.RUTA0, flight.RUTA);
   const meta      = getAirlineMeta(flight.NOMBRE_AEROLINEA);
@@ -228,9 +285,18 @@ function openModal(flight) {
   const badgeClass = ['on-time','confirmed','boarding','delayed','info','arrived','departed','cancelled']
     .includes(statusKey) ? statusKey : 'scheduled';
 
-  const stopsHtml = route.stops.map((stop, i) => {
+  const airportLabel = document.getElementById('airport-select')?.selectedOptions[0]?.textContent || state.airport;
+  const tipoLabel    = state.tipo === 'L' ? 'Llegada' : 'Salida';
+  const relTime      = relTimeLabel(flight, statusKey);
+
+  const fr24Url = meta.iata && flightNum
+    ? `https://www.flightradar24.com/data/flights/${meta.iata.toLowerCase()}${flightNum.replace(/\s+/g, '')}`
+    : null;
+
+  const stops = route.stops.length ? route.stops : [route.label];
+  const stopsHtml = stops.map((stop, i) => {
     const isFirst = i === 0;
-    const isLast  = i === route.stops.length - 1;
+    const isLast  = i === stops.length - 1;
     return `
       <div class="route-stop">
         <div class="route-stop-dot${isFirst || isLast ? ' filled' : ''}"></div>
@@ -244,8 +310,9 @@ function openModal(flight) {
     <div class="modal-head">
       <div class="modal-logo">${airlineIdHtml(meta, flight.ID_EMPRESA)}</div>
       <div class="modal-flight-info">
-        <div class="modal-flightnum">${flightNum}</div>
+        <div class="modal-flightnum">${meta.iata ? `${meta.iata} ` : ''}${flightNum}</div>
         <div class="modal-airline-name">${flight.NOMBRE_AEROLINEA || ''}</div>
+        <div class="modal-context">${tipoLabel} · ${airportLabel}</div>
       </div>
     </div>
     <div class="modal-time-row">
@@ -256,24 +323,70 @@ function openModal(flight) {
         ${delay ? `<span class="delay-tag">${delay}</span>` : ''}
       ` : ''}
       ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
+      ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
       ${gate ? `<span class="row-gate">P.${gate}</span>` : ''}
     </div>
     <p class="modal-section-label">Ruta completa</p>
     <div class="modal-route">${stopsHtml}</div>
+    <div class="modal-actions">
+      ${fr24Url ? `
+        <a class="modal-action" href="${fr24Url}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+            <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+          </svg>
+          Rastrear vuelo
+        </a>` : ''}
+      <button class="modal-action" id="modal-share">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+          <path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Compartir
+      </button>
+    </div>
   `;
 
+  const shareBtn = document.getElementById('modal-share');
+  shareBtn.addEventListener('click', async () => {
+    const text = `${tipoLabel} ${flight.NOMBRE_AEROLINEA || ''} ${flightNum} — ${route.label} — ${showActual ? actual : sched}${statusLabel ? ` (${statusLabel})` : ''} · ${airportLabel}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Lynceus Aero', text, url: location.href }); }
+      catch { /* user cancelled the share sheet */ }
+      return;
+    }
+    const copied = await copyText(`${text}\n${location.href}`);
+    shareBtn.querySelector('svg').style.display = 'none';
+    shareBtn.lastChild.textContent = copied ? 'Copiado ✓' : 'No se pudo copiar';
+  });
+
+  lastFocusedEl = document.activeElement;
   const overlay = document.getElementById('modal-overlay');
   overlay.removeAttribute('hidden');
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('is-open')));
   document.body.style.overflow = 'hidden';
+  document.getElementById('modal-close').focus({ preventScroll: true });
 }
 
-function closeModal() {
+function closeModal({ slide = false } = {}) {
   const overlay = document.getElementById('modal-overlay');
+  if (overlay.hasAttribute('hidden') || !overlay.classList.contains('is-open')) return;
+  const sheet = document.getElementById('modal-sheet');
+  if (slide) {
+    // Continue the swipe: let the sheet keep travelling down instead of snapping back
+    sheet.style.transition = 'transform 240ms var(--ease-out)';
+    sheet.style.transform  = 'translateY(110%)';
+  } else {
+    sheet.style.transition = '';
+    sheet.style.transform  = '';
+  }
   overlay.classList.remove('is-open');
   overlay.addEventListener('transitionend', () => {
     overlay.setAttribute('hidden', '');
+    sheet.style.transition = '';
+    sheet.style.transform  = '';
     document.body.style.overflow = '';
+    lastFocusedEl?.focus?.({ preventScroll: true });
+    lastFocusedEl = null;
   }, { once: true });
 }
 
@@ -336,6 +449,7 @@ function renderCard(flight) {
   const cardId      = flight.IDDW_ITINERARIO || flightNum;
   const pinned      = getPins().has(flightNum);
   const dotCfg      = STATUS_DOT[statusKey];
+  const relTime     = relTimeLabel(flight, statusKey);
 
   const badgeClass = ['on-time','confirmed','boarding','delayed','info','arrived','departed','cancelled']
     .includes(statusKey) ? statusKey : 'scheduled';
@@ -344,14 +458,10 @@ function renderCard(flight) {
     ? `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" fill="currentColor"/></svg>`
     : `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>`;
 
-  const fr24Url = meta.iata
-    ? `https://www.flightradar24.com/data/flights/${meta.iata.toLowerCase()}${flightNum.replace(/\s+/g, '')}`
-    : null;
-
   return `
     <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}" role="listitem"
-      data-flight="${flightNum}"
-      aria-label="Vuelo ${meta.abbr} ${flightNum} a ${destination}, ${statusLabel || 'programado'}">
+      data-flight="${flightNum}" tabindex="0"
+      aria-label="Vuelo ${meta.abbr} ${flightNum} a ${destination}, ${statusLabel || 'programado'}. Ver detalle">
       <div class="fr-head">
         ${flight.ID_EMPRESA
           ? `<img class="fr-logo" src="${NAABOL_LOGO(flight.ID_EMPRESA)}" alt="" aria-hidden="true">`
@@ -386,6 +496,7 @@ function renderCard(flight) {
       <div class="fr-footer">
         ${dotCfg ? `<span class="status-dot ${dotCfg.color}${dotCfg.pulse ? ' pulse' : ''}" aria-hidden="true"></span>` : ''}
         ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
+        ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
         ${gate ? `<div class="gate-badge"><span class="gate-label">Puerta</span><span class="gate-num">${gate}</span></div>` : ''}
       </div>
     </article>
@@ -401,22 +512,16 @@ function renderFlights(animate) {
 
   list.innerHTML = flights.length
     ? flights.map(renderCard).join('')
-    : `<div class="state-empty">${state.search ? 'Sin resultados para esa búsqueda' : 'No hay vuelos para mostrar'}</div>`;
+    : `<div class="state-empty">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" aria-hidden="true">
+          ${state.search
+            ? '<circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
+            : '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'}
+        </svg>
+        <p>${state.search ? 'Sin resultados para esa búsqueda' : 'No hay vuelos para mostrar'}</p>
+      </div>`;
 
   updateSummary(state.flights, filtered);
-}
-
-function updateSortBar() {
-  const delayedPill = document.querySelector('.sort-pill[data-sort="delayed"]');
-  if (!delayedPill) return;
-  const isLlegadas = state.tipo === 'L';
-  delayedPill.hidden = isLlegadas;
-  if (isLlegadas && state.sort === 'delayed') {
-    state.sort = 'time';
-    document.querySelectorAll('.sort-pill').forEach(p =>
-      p.classList.toggle('active', p.dataset.sort === 'time')
-    );
-  }
 }
 
 function updateTabIndicator(activeTab) {
@@ -428,18 +533,19 @@ function updateTabIndicator(activeTab) {
 }
 
 // ── State ───────────────────────────────────────────────
-const { airport: initAirport, tipo: initTipo } = readURLState();
+const initURL = readURLState();
 
 const state = {
-  airport: initAirport,
-  tipo:    initTipo,
-  sort:    'time',
-  search:  '',
+  airport: initURL.airport,
+  tipo:    initURL.tipo,
+  sort:    initURL.sort,
+  search:  initURL.search,
   flights: [],
   loading: false,
 };
 
 let refreshTimer = null;
+let lastFetchAt  = 0;
 
 // ── Fetch ───────────────────────────────────────────────
 async function fetchFlights({ isRefresh = false } = {}) {
@@ -459,6 +565,7 @@ async function fetchFlights({ isRefresh = false } = {}) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     state.flights = await res.json();
+    lastFetchAt = Date.now();
     renderFlights(!isRefresh);
 
     const now = new Date();
@@ -467,7 +574,14 @@ async function fetchFlights({ isRefresh = false } = {}) {
 
   } catch (err) {
     if (!isRefresh) {
-      list.innerHTML = `<div class="state-empty">Error al cargar vuelos — reintentando…</div>`;
+      list.innerHTML = `
+        <div class="state-empty">
+          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" aria-hidden="true">
+            <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p>No se pudieron cargar los vuelos</p>
+          <button class="retry-btn" type="button">Reintentar</button>
+        </div>`;
     }
     console.error(err);
   } finally {
@@ -504,25 +618,31 @@ document.addEventListener('DOMContentLoaded', () => {
     t.classList.toggle('active', isActive);
     t.setAttribute('aria-selected', String(isActive));
   });
+  sortPills.forEach(p => p.classList.toggle('active', p.dataset.sort === state.sort));
+  if (state.search) {
+    searchInput.value = state.search;
+    searchBar.classList.add('has-query');
+  }
 
   requestAnimationFrame(() => {
     const activeTab = document.querySelector('.tab.active');
     if (activeTab) updateTabIndicator(activeTab);
-    updateSortBar();
   });
 
   // Search
   searchInput.addEventListener('input', () => {
     state.search = searchInput.value;
     searchBar.classList.toggle('has-query', !!state.search);
+    writeURLState();
     renderFlights(false);
   });
 
   searchClear.addEventListener('click', () => {
-    searchInput.value = '';
     state.search = '';
+    searchInput.value = '';
     searchBar.classList.remove('has-query');
     searchInput.focus();
+    writeURLState();
     renderFlights(false);
   });
 
@@ -551,7 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
       state.tipo = tab.dataset.tipo;
       clearSearch();
       updateTabIndicator(tab);
-      updateSortBar();
       writeURLState();
       fetchFlights();
       scheduleRefresh();
@@ -565,25 +684,43 @@ document.addEventListener('DOMContentLoaded', () => {
       sortPills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       state.sort = pill.dataset.sort;
+      writeURLState();
       renderFlights(true);
     });
   });
 
-  // Pin + stops toggle — delegate to the list container
+  function openFlightModal(flightNum) {
+    const flight = state.flights.find(f => (f.NRO_VUELO || '').trim() === flightNum);
+    if (flight) openModal(flight);
+  }
+
+  // Pin / retry / card tap — delegate to the list container
   flightsList.addEventListener('click', e => {
-    const stopBtn = e.target.closest('.stops-toggle');
-    if (stopBtn) {
-      const card      = stopBtn.closest('.flight-row');
-      const flightNum = card?.dataset.flight;
-      const flight    = state.flights.find(f => (f.NRO_VUELO || '').trim() === flightNum);
-      if (flight) openModal(flight);
+    const pinBtn = e.target.closest('.pin-btn');
+    if (pinBtn) {
+      navigator.vibrate?.(10);
+      togglePin(pinBtn.dataset.pin);
+      renderFlights(false);
       return;
     }
 
-    const pinBtn = e.target.closest('.pin-btn');
-    if (pinBtn) {
-      togglePin(pinBtn.dataset.pin);
-      renderFlights(false);
+    if (e.target.closest('.retry-btn')) {
+      fetchFlights();
+      scheduleRefresh();
+      return;
+    }
+
+    const card = e.target.closest('.flight-row');
+    if (card) openFlightModal(card.dataset.flight);
+  });
+
+  // Keyboard: open card detail with Enter / Space
+  flightsList.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('.flight-row');
+    if (card && e.target === card) {
+      e.preventDefault();
+      openFlightModal(card.dataset.flight);
     }
   });
 
@@ -592,6 +729,121 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === e.currentTarget) closeModal();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // Swipe down on the sheet to dismiss (only when its content is scrolled to top).
+  // The drag engages after a 10px threshold so plain taps on buttons inside the
+  // sheet are never preventDefault-ed (which would swallow their click events).
+  const sheet = document.getElementById('modal-sheet');
+  const SHEET_DRAG_THRESHOLD = 10;
+  let sheetStartY  = null;
+  let sheetDelta   = 0;
+  let sheetDragging = false;
+
+  sheet.addEventListener('touchstart', e => {
+    sheetStartY = sheet.scrollTop <= 0 ? e.touches[0].clientY : null;
+    sheetDelta = 0;
+    sheetDragging = false;
+  }, { passive: true });
+
+  sheet.addEventListener('touchmove', e => {
+    if (sheetStartY === null) return;
+    sheetDelta = e.touches[0].clientY - sheetStartY;
+    if (!sheetDragging && sheetDelta > SHEET_DRAG_THRESHOLD && sheet.scrollTop <= 0) {
+      sheetDragging = true;
+    }
+    if (sheetDragging && sheetDelta > 0) {
+      e.preventDefault();
+      sheet.style.transition = 'none';
+      sheet.style.transform = `translateY(${sheetDelta - SHEET_DRAG_THRESHOLD}px)`;
+    }
+  }, { passive: false });
+
+  sheet.addEventListener('touchend', () => {
+    if (sheetStartY === null) return;
+    sheetStartY = null;
+    if (sheetDragging && sheetDelta > 90) {
+      closeModal({ slide: true });
+    } else if (sheetDragging) {
+      sheet.style.transition = '';
+      sheet.style.transform = '';
+    }
+    sheetDelta = 0;
+    sheetDragging = false;
+  });
+
+  // Pull to refresh — engages only at the very top of the page
+  const ptr = document.getElementById('ptr');
+  const PTR_TRIGGER = 58;
+  let ptrStartY = null;
+  let ptrPull   = 0;
+
+  document.addEventListener('touchstart', e => {
+    const modalOpen = !document.getElementById('modal-overlay').hasAttribute('hidden');
+    ptrStartY = (window.scrollY <= 0 && !modalOpen && !ptr.classList.contains('refreshing'))
+      ? e.touches[0].clientY : null;
+    ptrPull = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (ptrStartY === null) return;
+    const delta = e.touches[0].clientY - ptrStartY;
+    if (delta <= 0 || window.scrollY > 0) { ptrPull = 0; ptr.style.opacity = 0; return; }
+    ptrPull = Math.min(delta * 0.45, PTR_TRIGGER + 14);
+    ptr.style.opacity   = Math.min(ptrPull / PTR_TRIGGER, 1);
+    ptr.style.transform = `translateX(-50%) translateY(${ptrPull}px) rotate(${ptrPull * 3}deg)`;
+    ptr.classList.toggle('ready', ptrPull >= PTR_TRIGGER);
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (ptrStartY === null) return;
+    ptrStartY = null;
+    if (ptrPull >= PTR_TRIGGER) {
+      ptr.classList.add('refreshing');
+      ptr.style.transform = `translateX(-50%) translateY(${PTR_TRIGGER}px)`;
+      navigator.vibrate?.(10);
+      fetchFlights({ isRefresh: true }).finally(() => {
+        scheduleRefresh();
+        ptr.classList.remove('refreshing', 'ready');
+        ptr.style.opacity = 0;
+        ptr.style.transform = 'translateX(-50%) translateY(0)';
+      });
+    } else {
+      ptr.classList.remove('ready');
+      ptr.style.opacity = 0;
+      ptr.style.transform = 'translateX(-50%) translateY(0)';
+    }
+    ptrPull = 0;
+  });
+
+  // Connectivity
+  const offlineBanner = document.getElementById('offline-banner');
+  offlineBanner.hidden = navigator.onLine !== false;
+  window.addEventListener('offline', () => { offlineBanner.hidden = false; });
+  window.addEventListener('online',  () => {
+    offlineBanner.hidden = true;
+    fetchFlights({ isRefresh: true });
+    scheduleRefresh();
+  });
+
+  // Refresh when the tab comes back after being backgrounded (mobile timers pause)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && Date.now() - lastFetchAt > REFRESH_MS) {
+      fetchFlights({ isRefresh: true });
+      scheduleRefresh();
+    }
+  });
+
+  // Scroll to top
+  const scrollTopBtn = document.getElementById('scroll-top');
+  window.addEventListener('scroll', () => {
+    scrollTopBtn.hidden = window.scrollY < 600;
+  }, { passive: true });
+  scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 
   fetchFlights();
   scheduleRefresh();
