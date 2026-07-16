@@ -59,11 +59,26 @@ html[data-theme="dark"] {
 html {
   background: var(--bg);
   color: var(--text);
+  color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Disable the browser's native pull-to-refresh — we ship our own */
+  overscroll-behavior-y: contain;
+}
+
+html[data-theme="dark"] { color-scheme: dark; }
+
+/* No 300ms double-tap-zoom delay on anything interactive */
+button, select, input, a, .flight-row {
+  touch-action: manipulation;
+}
+
+:where(button, select, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
 }
 
 body {
@@ -72,6 +87,34 @@ body {
   margin: 0 auto;
   padding-bottom: calc(2rem + var(--safe-bottom));
 }
+
+/* ── Pull to refresh ─────────────────────────────────── */
+.ptr {
+  position: fixed;
+  top: calc(var(--safe-top) + 8px);
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  color: var(--text-3);
+  opacity: 0;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: none;
+  transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-out);
+}
+
+.ptr.ready { color: var(--purple); }
+
+.ptr.refreshing svg { animation: ptr-spin 700ms linear infinite; }
+
+@keyframes ptr-spin { to { transform: rotate(360deg); } }
 
 /* ── Header ─────────────────────────────────────────── */
 .header {
@@ -157,8 +200,8 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -189,7 +232,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   border: 1px solid var(--border-2);
   border-radius: 8px;
   padding: 0.625rem 0.875rem;
-  font-size: 0.875rem;
+  font-size: 1rem; /* ≥16px so iOS doesn't zoom on focus */
   font-weight: 500;
   font-family: inherit;
   appearance: none;
@@ -282,7 +325,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.5rem 2.25rem 0.5rem 2.125rem;
-  font-size: 0.875rem;
+  font-size: 1rem; /* ≥16px so iOS doesn't zoom on focus */
   font-family: inherit;
   outline: none;
   -webkit-appearance: none;
@@ -308,7 +351,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   border: none;
   color: var(--text-3);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.5rem;
   border-radius: 4px;
   line-height: 0;
   transition: color 150ms var(--ease-out);
@@ -336,7 +379,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .sort-pill {
   flex-shrink: 0;
-  padding: 0.3125rem 0.75rem;
+  padding: 0.4375rem 0.875rem;
   border-radius: 9999px;
   border: 1px solid var(--border-2);
   background: transparent;
@@ -398,19 +441,19 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   gap: 0.625rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 1rem;
-  cursor: default;
-  opacity: 0;
-  transform: translateY(6px);
-  animation: card-in 240ms var(--ease-out) forwards;
+  box-shadow: 0 1px 2px rgba(13, 13, 26, 0.04);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: card-in 240ms var(--ease-out) backwards;
   transition: border-color 150ms var(--ease-out),
               box-shadow 150ms var(--ease-out),
               transform 150ms var(--ease-out);
 }
 
 @keyframes card-in {
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(6px); }
 }
 
 .flight-row:nth-child(1)    { animation-delay:   0ms }
@@ -426,6 +469,11 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .flight-row:nth-child(11)   { animation-delay: 230ms }
 .flight-row:nth-child(12)   { animation-delay: 242ms }
 .flight-row:nth-child(n+13) { animation-delay: 252ms }
+
+.flight-row:active { transform: scale(0.985); }
+
+.flight-row.status-arrived .fr-dest,
+.flight-row.status-departed .fr-dest { color: var(--text-2); }
 
 .flight-row.status-delayed,
 .flight-row.status-info {
@@ -464,10 +512,16 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .fr-logo {
   flex-shrink: 0;
-  width: 66px;
-  height: 66px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   border-radius: 8px;
+}
+
+/* NAABOL serves light-on-dark logos — keep them on a dark chip in both themes */
+img.fr-logo {
+  background: #191922;
+  padding: 5px;
 }
 
 .fr-airline {
@@ -655,6 +709,19 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .status-badge.departed  { color: var(--text-2); background: var(--surface-2); border: 1px solid var(--border); }
 .status-badge.scheduled { color: var(--text-3); background: transparent; }
 
+/* ── Relative time chip ──────────────────────────────── */
+.rel-time {
+  flex-shrink: 0;
+  padding: 0.175rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--purple);
+  background: var(--purple-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ── Stops toggle + expandable detail ───────────────── */
 .stops-toggle {
   display: inline-flex;
@@ -708,7 +775,8 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   flex-shrink: 0;
   background: none;
   border: none;
-  padding: 0.25rem;
+  padding: 0.5rem;
+  margin: -0.25rem;
   cursor: pointer;
   color: var(--text-3);
   border-radius: 4px;
@@ -768,9 +836,9 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   height: 28px;
   border-radius: 5px;
   object-fit: contain;
+  background: #191922;
+  padding: 2px;
 }
-
-html:not([data-theme="dark"]) .airline-logo { mix-blend-mode: multiply; }
 
 .airline-id .airline-chip              { display: none; }
 .airline-id.logo-error .airline-logo  { display: none; }
@@ -806,6 +874,7 @@ html:not([data-theme="dark"]) .airline-logo { mix-blend-mode: multiply; }
   transition: transform 280ms var(--ease-out);
   max-height: 85dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   position: relative;
 }
@@ -868,6 +937,49 @@ html:not([data-theme="dark"]) .airline-logo { mix-blend-mode: multiply; }
   margin-top: 0.125rem;
 }
 
+.modal-context {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-top: 0.25rem;
+}
+
+/* ── Modal actions ───────────────────────────────────── */
+.modal-actions {
+  display: flex;
+  gap: 0.625rem;
+}
+
+.modal-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6875rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-2);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out),
+              transform 160ms var(--ease-out);
+}
+
+.modal-action:active { transform: scale(0.97); }
+
+@media (hover: hover) and (pointer: fine) {
+  .modal-action:hover { background: var(--surface); border-color: var(--text-3); }
+}
+
 .modal-time-row {
   display: flex;
   align-items: center;
@@ -889,6 +1001,17 @@ html:not([data-theme="dark"]) .airline-logo { mix-blend-mode: multiply; }
 .modal-time.old   { text-decoration: line-through; color: var(--text-3); font-size: 1.125rem; align-self: center; }
 .modal-time.new   { color: var(--red); }
 .modal-time-sep   { color: var(--text-3); font-size: 0.875rem; }
+
+.row-gate {
+  padding: 0.175rem 0.5rem;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
 
 .modal-section-label {
   font-size: 0.6875rem;
@@ -944,10 +1067,92 @@ html:not([data-theme="dark"]) .airline-logo { mix-blend-mode: multiply; }
 
 /* ── Empty / Loading ─────────────────────────────────── */
 .state-empty {
-  padding: 3rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 3.5rem 1rem;
   text-align: center;
   color: var(--text-3);
   font-size: 0.875rem;
+}
+
+.state-empty svg { opacity: 0.55; }
+
+.retry-btn {
+  margin-top: 0.25rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  border: none;
+  background: var(--purple);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms var(--ease-out), opacity 140ms var(--ease-out);
+}
+
+.retry-btn:active { transform: scale(0.96); }
+
+/* ── Offline banner ──────────────────────────────────── */
+.offline-banner {
+  position: fixed;
+  bottom: calc(1.25rem + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.9375rem;
+  border-radius: 9999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  animation: banner-in 260ms var(--ease-out) backwards;
+}
+
+.offline-banner[hidden] { display: none; }
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+}
+
+/* ── Scroll to top ───────────────────────────────────── */
+.scroll-top {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(1.25rem + var(--safe-bottom));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  -webkit-tap-highlight-color: transparent;
+  animation: fab-in 220ms var(--ease-out) backwards;
+  transition: transform 160ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+@keyframes fab-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+.scroll-top[hidden] { display: none; }
+.scroll-top:active { transform: scale(0.9); }
+
+@media (hover: hover) and (pointer: fine) {
+  .scroll-top:hover { color: var(--text); }
 }
 
 .skeleton-card {
@@ -968,18 +1173,15 @@ html:not([data-theme="dark"]) .airline-logo { mix-blend-mode: multiply; }
   50%       { opacity: 0.4; }
 }
 
-.flights-list.no-animate .flight-row {
-  animation: none;
-  opacity: 1;
-  transform: none;
-}
+.flights-list.no-animate .flight-row { animation: none; }
 
 /* ── Reduced motion ──────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .flight-row    { animation: none; opacity: 1; transform: none; }
+  .flight-row    { animation: none; }
   .live-dot      { animation: none; }
   .status-dot    { animation: none; }
   .skeleton-card { animation: none; }
+  .ptr.refreshing svg { animation: none; }
   .tab-indicator { transition: none; }
   .sort-pill     { transition: none; }
   .pin-btn       { transition: none; }

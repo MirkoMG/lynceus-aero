@@ -5,13 +5,15 @@ A mobile-first flight information display for Bolivian airports, built on top of
 ## Features
 
 - Live arrivals and departures for all Bolivian airports
-- Delay indicators with actual vs scheduled times
-- Search by flight number, destination, or airline
+- Delay indicators with actual vs scheduled times, plus live "en X min" countdowns
+- Search by flight number, destination, or airline (accent-insensitive)
 - Sort by time, delays first, or airline
 - Pin flights to track at the top
-- Multi-stop route modal
+- Tap any flight for a detail sheet: full route, share, and Flightradar24 tracking
+- Pull to refresh, swipe down to dismiss the sheet
+- Installable PWA — the last-seen board still opens offline
 - Light and dark theme
-- Auto-refreshes every 60 seconds
+- Auto-refreshes every 60 seconds (and on reconnect / returning to the tab)
 
 ## Stack
 
