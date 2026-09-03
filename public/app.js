@@ -36,28 +36,47 @@ const AIRLINE_META = {
 
 // Lower = shown first when sort = 'delayed'
 const SORT_PRIORITY = {
-  delayed: 0, info: 0, cancelled: 1, boarding: 2,
+  delayed: 0, retimed: 0, info: 0, cancelled: 1, boarding: 2,
   'on-time': 3, confirmed: 3, scheduled: 4, arrived: 5, departed: 5,
 };
 
+// Upstream is inconsistent about spacing, hyphens and accents ("PRE-BOARDING",
+// "PRE BOARDING", "PREEMBARCANDO") and pads values with trailing spaces, so both
+// these keys and the incoming value are squashed to bare letters before matching.
+const squashStatus = s => (s || '')
+  .toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]/g, '');
+
 const STATUS_MAP = {
-  'on time':     { key: 'on-time',   label: 'En Horario'   },
-  'en horario':  { key: 'on-time',   label: 'En Horario'   },
-  'arrived':     { key: 'arrived',   label: 'En Tierra'    },
-  'en tierra':   { key: 'arrived',   label: 'En Tierra'    },
-  'confirmed':   { key: 'confirmed', label: 'Confirmado'   },
-  'confirmado':  { key: 'confirmed', label: 'Confirmado'   },
-  'pre-boarding':{ key: 'boarding',  label: 'Pre-Embarque' },
-  'pre-embarque':{ key: 'boarding',  label: 'Pre-Embarque' },
-  'boarding':    { key: 'boarding',  label: 'Embarcando'   },
-  'embarque':    { key: 'boarding',  label: 'Embarcando'   },
-  'departed':    { key: 'departed',  label: 'Despegó'      },
-  'salida':      { key: 'departed',  label: 'Despegó'      },
-  'cancelled':   { key: 'cancelled', label: 'Cancelado'    },
-  'cancelado':   { key: 'cancelled', label: 'Cancelado'    },
-  'information': { key: 'info',      label: 'Informes'     },
-  'informes':    { key: 'info',      label: 'Informes'     },
+  'on time':       { key: 'on-time',   label: 'En Horario'   },
+  'en horario':    { key: 'on-time',   label: 'En Horario'   },
+  'arrived':       { key: 'arrived',   label: 'En Tierra'    },
+  'landed':        { key: 'arrived',   label: 'En Tierra'    },
+  'en tierra':     { key: 'arrived',   label: 'En Tierra'    },
+  'confirmed':     { key: 'confirmed', label: 'Confirmado'   },
+  'confirmado':    { key: 'confirmed', label: 'Confirmado'   },
+  'pre-boarding':  { key: 'boarding',  label: 'Pre-Embarque' },
+  'pre-embarque':  { key: 'boarding',  label: 'Pre-Embarque' },
+  'preembarcando': { key: 'boarding',  label: 'Pre-Embarque' },
+  'boarding':      { key: 'boarding',  label: 'Embarcando'   },
+  'embarque':      { key: 'boarding',  label: 'Embarcando'   },
+  'new time':      { key: 'retimed',   label: 'Nueva Hora'   },
+  'nueva hora':    { key: 'retimed',   label: 'Nueva Hora'   },
+  'delayed':       { key: 'delayed',   label: 'Demorado'     },
+  'demorado':      { key: 'delayed',   label: 'Demorado'     },
+  'departed':      { key: 'departed',  label: 'Despegó'      },
+  'salida':        { key: 'departed',  label: 'Despegó'      },
+  'cancelled':     { key: 'cancelled', label: 'Cancelado'    },
+  'cancelado':     { key: 'cancelled', label: 'Cancelado'    },
+  'information':   { key: 'info',      label: 'Informes'     },
+  'informes':      { key: 'info',      label: 'Informes'     },
 };
+
+// Longest key first, so "preboarding" is never swallowed by "boarding"
+const STATUS_LOOKUP = Object.entries(STATUS_MAP)
+  .map(([k, v]) => [squashStatus(k), v])
+  .sort((a, b) => b[0].length - a[0].length);
 
 // ── Pin helpers ─────────────────────────────────────────
 function getPins() {
@@ -98,19 +117,17 @@ function writeURLState() {
 
 // ── Flight helpers ──────────────────────────────────────
 function getStatus(flight) {
-  const obs = (flight.OBSERVACION_INGLES || flight.OBSERVACION || '').trim().toLowerCase();
-  const actual = (flight.HORA_REAL || '').trim();
-  const sched  = (flight.HORA_ESTIMADA || '').trim();
-
-  for (const [key, val] of Object.entries(STATUS_MAP)) {
-    if (obs.includes(key)) return val;
+  const obs = squashStatus(flight.OBSERVACION_INGLES || flight.OBSERVACION);
+  if (obs) {
+    const hit = STATUS_LOOKUP.find(([key]) => obs.includes(key));
+    if (hit) return hit[1];
   }
 
-  if (actual && sched && actual !== sched) {
-    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    let diff = toMin(actual) - toMin(sched);
-    if (diff < -720) diff += 1440; // midnight crossing
-    if (diff > 4) return { key: 'delayed', label: 'Demorado' };
+  // No usable status text — infer a delay from the times themselves
+  const actual = (flight.HORA_REAL || '').trim();
+  const sched  = (flight.HORA_ESTIMADA || '').trim();
+  if (actual && sched && actual !== sched && calcDelayMin(sched, actual) > 4) {
+    return { key: 'delayed', label: 'Demorado' };
   }
 
   return { key: 'scheduled', label: '' };
@@ -162,6 +179,7 @@ const STATUS_DOT = {
   'confirmed': { color: 'green', pulse: true  },
   'boarding':  { color: 'blue',  pulse: true  },
   'delayed':   { color: 'red',   pulse: true  },
+  'retimed':   { color: 'amber', pulse: true  },
   'info':      { color: 'red',   pulse: true  },
   'cancelled': { color: 'red',   pulse: false },
   'arrived':   { color: 'gray',  pulse: false },
@@ -282,7 +300,7 @@ function openModal(flight) {
   const delay     = showActual ? formatDelay(flight.HORA_ESTIMADA, flight.HORA_REAL) : '';
   const gate      = (flight.NRO_PUERTA || '').trim();
   const flightNum = (flight.NRO_VUELO || '').trim();
-  const badgeClass = ['on-time','confirmed','boarding','delayed','info','arrived','departed','cancelled']
+  const badgeClass = ['on-time','confirmed','boarding','delayed','retimed','info','arrived','departed','cancelled']
     .includes(statusKey) ? statusKey : 'scheduled';
 
   const airportLabel = document.getElementById('airport-select')?.selectedOptions[0]?.textContent || state.airport;
@@ -451,7 +469,7 @@ function renderCard(flight) {
   const dotCfg      = STATUS_DOT[statusKey];
   const relTime     = relTimeLabel(flight, statusKey);
 
-  const badgeClass = ['on-time','confirmed','boarding','delayed','info','arrived','departed','cancelled']
+  const badgeClass = ['on-time','confirmed','boarding','delayed','retimed','info','arrived','departed','cancelled']
     .includes(statusKey) ? statusKey : 'scheduled';
 
   const pinIcon = pinned
