@@ -126,23 +126,66 @@ function getStatus(flight) {
   // No usable status text — infer a delay from the times themselves
   const actual = (flight.HORA_REAL || '').trim();
   const sched  = (flight.HORA_ESTIMADA || '').trim();
-  if (actual && sched && actual !== sched && calcDelayMin(sched, actual) > 4) {
+  if (actual && sched && actual !== sched && delayMinutes(flight) > 4) {
     return { key: 'delayed', label: 'Demorado' };
   }
 
   return { key: 'scheduled', label: '' };
 }
 
-function calcDelayMin(sched, actual) {
-  if (!sched || !actual) return 0;
+// ── Dates ───────────────────────────────────────────────
+// Every record carries full timestamps (FECHA, FECHA_HORA_FORMAT) next to the
+// bare HH:MM fields. Using them removes the midnight-crossing guesswork the
+// HH:MM math needed. Bolivia keeps UTC-4 year round with no DST, so board times
+// are pinned to that offset rather than the viewer's — a countdown then reads
+// the same whether you open this in La Paz or from another timezone.
+const BOLIVIA_OFFSET_MIN = -240;
+
+function boliviaDate(y, mo, d, h, mi, sec = 0) {
+  return new Date(Date.UTC(y, mo - 1, d, h, mi, sec) - BOLIVIA_OFFSET_MIN * 60_000);
+}
+
+// "2026-09-14 18:37:00.000" → Date. Hand-parsed because engines disagree on the
+// space-separated form, and Date would read it as the viewer's local time.
+function parseApiDateTime(str) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec((str || '').trim());
+  return m ? boliviaDate(+m[1], +m[2], +m[3], +m[4], +m[5], +(m[6] || 0)) : null;
+}
+
+// HORA_ESTIMADA / HORA_REAL carry no date, so pair them with the record's FECHA
+function flightDateAt(flight, hhmm) {
+  const d = /^(\d{4})-(\d{2})-(\d{2})/.exec((flight.FECHA || flight.FECHA_HORA || '').trim());
+  const t = /^(\d{1,2}):(\d{2})/.exec((hhmm || '').trim());
+  return d && t ? boliviaDate(+d[1], +d[2], +d[3], +t[1], +t[2]) : null;
+}
+
+function scheduledAt(flight) {
+  return flightDateAt(flight, flight.HORA_ESTIMADA);
+}
+
+// FECHA_HORA tracks the live time — it mirrors HORA_REAL once one is published
+function actualAt(flight) {
+  return parseApiDateTime(flight.FECHA_HORA_FORMAT || flight.FECHA_HORA)
+      || flightDateAt(flight, flight.HORA_REAL);
+}
+
+function delayMinutes(flight) {
+  const sched = scheduledAt(flight);
+  const real  = actualAt(flight);
+  if (sched && real) return Math.round((real - sched) / 60_000);
+
+  // No usable dates — fall back to wall-clock strings and the old midnight guess
+  const s = (flight.HORA_ESTIMADA || '').trim();
+  const a = (flight.HORA_REAL || '').trim();
+  if (!s || !a) return 0;
   const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-  let diff = toMin(actual) - toMin(sched);
+  let diff = toMin(a) - toMin(s);
   if (diff < -720) diff += 1440;
   return diff;
 }
 
-function formatDelay(sched, actual) {
-  const diff = calcDelayMin(sched, actual);
+function formatDelay(flight) {
+  const diff = delayMinutes(flight);
   if (diff <= 4) return '';
   if (diff < 60) return `+${diff}m`;
   const h = Math.floor(diff / 60);
@@ -164,8 +207,10 @@ function relMinutes(t) {
 
 function relTimeLabel(flight, statusKey) {
   if (['arrived', 'departed', 'cancelled'].includes(statusKey)) return '';
-  const t = (flight.HORA_REAL || '').trim() || (flight.HORA_ESTIMADA || '').trim();
-  const diff = relMinutes(t);
+  const when = actualAt(flight) || scheduledAt(flight);
+  const diff = when
+    ? Math.round((when - Date.now()) / 60_000)
+    : relMinutes((flight.HORA_REAL || '').trim() || (flight.HORA_ESTIMADA || '').trim());
   if (diff === null || diff < -20 || diff > 360) return '';
   if (diff <= 1)  return 'ahora';
   if (diff < 60)  return `en ${diff} min`;
@@ -214,13 +259,18 @@ function parseRoute(ruta0, ruta) {
 
   // The API pads routes with numeric placeholders like "000" — drop them
   const stops = raw.split('|').map(s => s.trim()).filter(s => s && !/^\d+$/.test(s));
-  if (stops.length <= 1) return { label: titleCase(stops[0] || '—'), stops: [], intermediateCount: 0 };
+  if (stops.length <= 1) {
+    const only = titleCase(stops[0] || '—');
+    return { label: only, origin: only, destination: only, stops: [], intermediateCount: 0 };
+  }
 
   const titled = stops.map(titleCase);
   const intermediateCount = stops.length - 2; // excludes first and last
 
   return {
     label: `${titled[0]} → ${titled[titled.length - 1]}`,
+    origin: titled[0],
+    destination: titled[titled.length - 1],
     stops: titled,
     intermediateCount: Math.max(0, intermediateCount),
   };
@@ -297,7 +347,7 @@ function openModal(flight) {
   const actual    = formatTime(flight.HORA_REAL);
   const isDelayed = statusKey === 'delayed' || statusKey === 'info';
   const showActual = isDelayed && actual !== '—' && actual !== sched;
-  const delay     = showActual ? formatDelay(flight.HORA_ESTIMADA, flight.HORA_REAL) : '';
+  const delay     = showActual ? formatDelay(flight) : '';
   const gate      = (flight.NRO_PUERTA || '').trim();
   const flightNum = (flight.NRO_VUELO || '').trim();
   const badgeClass = ['on-time','confirmed','boarding','delayed','retimed','info','arrived','departed','cancelled']
@@ -366,7 +416,7 @@ function openModal(flight) {
 
   const shareBtn = document.getElementById('modal-share');
   shareBtn.addEventListener('click', async () => {
-    const text = `${tipoLabel} ${flight.NOMBRE_AEROLINEA || ''} ${flightNum} — ${route.label} — ${showActual ? actual : sched}${statusLabel ? ` (${statusLabel})` : ''} · ${airportLabel}`;
+    const text = `${tipoLabel} ${flight.NOMBRE_AEROLINEA || ''} ${flightNum} — ${route.stops.length ? route.stops.join(' → ') : route.label} — ${showActual ? actual : sched}${statusLabel ? ` (${statusLabel})` : ''} · ${airportLabel}`;
     if (navigator.share) {
       try { await navigator.share({ title: 'Lynceus Aero', text, url: location.href }); }
       catch { /* user cancelled the share sheet */ }
@@ -459,10 +509,17 @@ function renderCard(flight) {
   const actual      = formatTime(flight.HORA_REAL);
   const isDelayed   = statusKey === 'delayed' || statusKey === 'info';
   const showActual  = isDelayed && actual !== '—' && actual !== sched;
-  const delay       = showActual ? formatDelay(flight.HORA_ESTIMADA, flight.HORA_REAL) : '';
+  const delay       = showActual ? formatDelay(flight) : '';
   const gate        = (flight.NRO_PUERTA || '').trim();
   const route       = parseRoute(flight.RUTA0, flight.RUTA);
-  const destination = route.label;
+  // RUTA0 publishes the aircraft's whole rotation, which often neither starts
+  // nor ends at the airport you are looking at — an El Alto arrival can read
+  // "MIAMI - SAO PAULO - BUENOS AIRES - SUCRE - SANTA CRUZ". Headlining first →
+  // last would name a city this flight is not taking you to, so show the end
+  // that means something for the board you are on: where an arrival is coming
+  // from, where a departure is going. The sheet still lists the full chain.
+  const isArrival   = state.tipo === 'L';
+  const endpoint    = isArrival ? route.origin : route.destination;
   const flightNum   = (flight.NRO_VUELO || '').trim();
   const cardId      = flight.IDDW_ITINERARIO || flightNum;
   const pinned      = getPins().has(flightNum);
@@ -479,7 +536,7 @@ function renderCard(flight) {
   return `
     <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}" role="listitem"
       data-flight="${flightNum}" tabindex="0"
-      aria-label="Vuelo ${meta.abbr} ${flightNum} a ${destination}, ${statusLabel || 'programado'}. Ver detalle">
+      aria-label="Vuelo ${meta.abbr} ${flightNum} ${isArrival ? 'desde' : 'a'} ${endpoint}, ${statusLabel || 'programado'}. Ver detalle">
       <div class="fr-head">
         ${flight.ID_EMPRESA
           ? `<img class="fr-logo" src="${NAABOL_LOGO(flight.ID_EMPRESA)}" alt="" aria-hidden="true">`
@@ -501,7 +558,8 @@ function renderCard(flight) {
         </div>
         <div class="fr-route-line" aria-hidden="true"></div>
         <div class="fr-dest-wrap">
-          <span class="fr-dest">${destination}</span>
+          <span class="fr-dest-label">${isArrival ? 'Desde' : 'Hacia'}</span>
+          <span class="fr-dest">${endpoint}</span>
           ${route.intermediateCount > 0 ? `
             <button class="stops-toggle" aria-label="Ver ruta completa">
               <svg class="stops-chevron" viewBox="0 0 12 12" fill="none" width="10" height="10" aria-hidden="true">

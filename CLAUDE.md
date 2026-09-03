@@ -47,14 +47,26 @@ server.js      — local dev Express proxy (not deployed)
 Single endpoint: `GET /Fids/itin/vuelos?aero=<airport>&tipo=<L|S>`
 
 Key response fields:
-- `NRO_VUELO` — flight number (digits only, no airline prefix)
+- `IDDW_ITINERARIO` — stable per-flight id (use this as a key, not `NRO_VUELO`)
+- `FECHA` — operational date, `YYYY-MM-DD 00:00:00.000`
+- `FECHA_HORA` / `FECHA_HORA_FORMAT` — full effective timestamp; mirrors `HORA_REAL`
+  once a new time is published. Times carry no offset — they are Bolivian local
+  (UTC-4, no DST), which is why `app.js` pins them to that offset rather than the
+  viewer's timezone
+- `NRO_VUELO` — flight number (digits only, no airline prefix; NOT unique across
+  airlines or airports, so it is not a safe key)
 - `NOMBRE_AEROLINEA` — airline name in uppercase
 - `ID_EMPRESA` — airline code used for logos (e.g. B50015 = BoA)
 - `HORA_ESTIMADA` — scheduled time HH:MM
 - `HORA_REAL` — actual time HH:MM (empty if on time)
 - `OBSERVACION` — status in Spanish
-- `OBSERVACION_INGLES` — status in English
-- `RUTA0` / `RUTA` — route/destination (pipe or >> separated for multi-stop)
+- `OBSERVACION_INGLES` — status in English, right-padded with spaces. Spacing and
+  hyphenation are inconsistent (`PRE-BOARDING`, `PRE BOARDING`, `PREEMBARCANDO`),
+  so `getStatus()` matches on a squashed form, longest key first
+- `RUTA0` / `RUTA` — the aircraft's full published rotation (pipe or `>>` separated).
+  It frequently neither starts nor ends at the airport being viewed, so the board
+  shows the origin on arrivals and the destination on departures rather than
+  first → last; the detail sheet lists the whole chain
 - `NRO_PUERTA` — gate number
 
 Airline logos: `https://fids.naabol.gob.bo/img/Aerolineas/{ID_EMPRESA}.png`

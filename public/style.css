@@ -622,6 +622,15 @@ img.fr-logo {
   gap: 0.1875rem;
 }
 
+.fr-dest-label {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  line-height: 1;
+}
+
 .fr-dest {
   font-size: 1rem;
   font-weight: 700;
