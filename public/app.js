@@ -219,6 +219,11 @@ function relTimeLabel(flight, statusKey) {
   return m ? `en ${h}h ${m}m` : `en ${h}h`;
 }
 
+// Status keys that have a .status-badge rule in style.css; anything else
+// falls back to the neutral 'scheduled' badge
+const BADGE_KEYS = new Set(['on-time', 'confirmed', 'boarding', 'delayed',
+  'retimed', 'info', 'arrived', 'departed', 'cancelled']);
+
 const STATUS_DOT = {
   'on-time':   { color: 'green', pulse: true  },
   'confirmed': { color: 'green', pulse: true  },
@@ -336,6 +341,10 @@ async function copyText(text) {
   }
 }
 
+// Rows whose full route is expanded, keyed by IDDW_ITINERARIO. Held outside the
+// DOM because renderFlights() rebuilds the list wholesale on every refresh.
+const openStops = new Set();
+
 // ── Modal ───────────────────────────────────────────────
 let lastFocusedEl = null;
 
@@ -350,8 +359,7 @@ function openModal(flight) {
   const delay     = showActual ? formatDelay(flight) : '';
   const gate      = (flight.NRO_PUERTA || '').trim();
   const flightNum = (flight.NRO_VUELO || '').trim();
-  const badgeClass = ['on-time','confirmed','boarding','delayed','retimed','info','arrived','departed','cancelled']
-    .includes(statusKey) ? statusKey : 'scheduled';
+  const badgeClass = BADGE_KEYS.has(statusKey) ? statusKey : 'scheduled';
 
   const airportLabel = document.getElementById('airport-select')?.selectedOptions[0]?.textContent || state.airport;
   const tipoLabel    = state.tipo === 'L' ? 'Llegada' : 'Salida';
@@ -522,20 +530,20 @@ function renderCard(flight) {
   const endpoint    = isArrival ? route.origin : route.destination;
   const flightNum   = (flight.NRO_VUELO || '').trim();
   const cardId      = flight.IDDW_ITINERARIO || flightNum;
+  const stopsOpen   = openStops.has(cardId);
   const pinned      = getPins().has(flightNum);
   const dotCfg      = STATUS_DOT[statusKey];
   const relTime     = relTimeLabel(flight, statusKey);
 
-  const badgeClass = ['on-time','confirmed','boarding','delayed','retimed','info','arrived','departed','cancelled']
-    .includes(statusKey) ? statusKey : 'scheduled';
+  const badgeClass = BADGE_KEYS.has(statusKey) ? statusKey : 'scheduled';
 
   const pinIcon = pinned
     ? `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" fill="currentColor"/></svg>`
     : `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>`;
 
   return `
-    <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}" role="listitem"
-      data-flight="${flightNum}" tabindex="0"
+    <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}${stopsOpen ? ' stops-open' : ''}" role="listitem"
+      data-flight="${flightNum}" data-id="${cardId}" tabindex="0"
       aria-label="Vuelo ${meta.abbr} ${flightNum} ${isArrival ? 'desde' : 'a'} ${endpoint}, ${statusLabel || 'programado'}. Ver detalle">
       <div class="fr-head">
         ${flight.ID_EMPRESA
@@ -561,7 +569,7 @@ function renderCard(flight) {
           <span class="fr-dest-label">${isArrival ? 'Desde' : 'Hacia'}</span>
           <span class="fr-dest">${endpoint}</span>
           ${route.intermediateCount > 0 ? `
-            <button class="stops-toggle" aria-label="Ver ruta completa">
+            <button class="stops-toggle" aria-expanded="${stopsOpen}" aria-label="Ver ruta completa">
               <svg class="stops-chevron" viewBox="0 0 12 12" fill="none" width="10" height="10" aria-hidden="true">
                 <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -569,6 +577,12 @@ function renderCard(flight) {
             </button>` : ''}
         </div>
       </div>
+      ${route.intermediateCount > 0 ? `
+        <div class="route-detail">
+          <div class="route-detail-inner">
+            <p class="stops-list">${route.stops.join(' → ')}</p>
+          </div>
+        </div>` : ''}
       <div class="fr-footer">
         ${dotCfg ? `<span class="status-dot ${dotCfg.color}${dotCfg.pulse ? ' pulse' : ''}" aria-hidden="true"></span>` : ''}
         ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
@@ -784,6 +798,16 @@ document.addEventListener('DOMContentLoaded', () => {
       fetchFlights();
       scheduleRefresh();
       return;
+    }
+
+    const stopsBtn = e.target.closest('.stops-toggle');
+    if (stopsBtn) {
+      const row  = stopsBtn.closest('.flight-row');
+      const open = !openStops.has(row.dataset.id);
+      open ? openStops.add(row.dataset.id) : openStops.delete(row.dataset.id);
+      row.classList.toggle('stops-open', open);
+      stopsBtn.setAttribute('aria-expanded', String(open));
+      return; // don't fall through and open the sheet as well
     }
 
     const card = e.target.closest('.flight-row');
