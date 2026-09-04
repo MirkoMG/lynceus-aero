@@ -486,6 +486,11 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   border-color: rgba(220, 38, 38, 0.2);
 }
 
+.flight-row.status-retimed {
+  box-shadow: inset 3px 0 0 var(--amber);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
 .flight-row.is-pinned:not(.status-delayed):not(.status-info) {
   box-shadow: inset 3px 0 0 var(--purple);
 }
@@ -580,6 +585,7 @@ img.fr-logo {
 }
 
 .fr-time.red                          { color: var(--red); }
+.fr-time.amber                        { color: var(--amber); }
 .flight-row.status-boarding  .fr-time { color: var(--blue); }
 .flight-row.status-arrived   .fr-time { color: var(--text-3); }
 .flight-row.status-departed  .fr-time { color: var(--text-3); }
@@ -592,6 +598,8 @@ img.fr-logo {
   font-variant-numeric: tabular-nums;
   margin-top: 0.125rem;
 }
+
+.delay-tag.amber { color: var(--amber); }
 
 .fr-route-line {
   flex: 1;
@@ -1015,6 +1023,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 
 .modal-time.old   { text-decoration: line-through; color: var(--text-3); font-size: 1.125rem; align-self: center; }
 .modal-time.new   { color: var(--red); }
+.modal-time.new.amber { color: var(--amber); }
 .modal-time-sep   { color: var(--text-3); font-size: 0.875rem; }
 
 .row-gate {

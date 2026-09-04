@@ -221,6 +221,10 @@ function relTimeLabel(flight, statusKey) {
 
 // Status keys that have a .status-badge rule in style.css; anything else
 // falls back to the neutral 'scheduled' badge
+// Statuses whose published time has moved, so the card shows the new time
+// struck through against the old one
+const TIME_MOVED_KEYS = new Set(['delayed', 'info', 'retimed']);
+
 const BADGE_KEYS = new Set(['on-time', 'confirmed', 'boarding', 'delayed',
   'retimed', 'info', 'arrived', 'departed', 'cancelled']);
 
@@ -354,8 +358,9 @@ function openModal(flight) {
   const { key: statusKey, label: statusLabel } = getStatus(flight);
   const sched     = formatTime(flight.HORA_ESTIMADA);
   const actual    = formatTime(flight.HORA_REAL);
-  const isDelayed = statusKey === 'delayed' || statusKey === 'info';
-  const showActual = isDelayed && actual !== '—' && actual !== sched;
+  const timeMoved  = TIME_MOVED_KEYS.has(statusKey);
+  const showActual = timeMoved && actual !== '—' && actual !== sched;
+  const timeTone   = statusKey === 'retimed' ? 'amber' : 'red';
   const delay     = showActual ? formatDelay(flight) : '';
   const gate      = (flight.NRO_PUERTA || '').trim();
   const flightNum = (flight.NRO_VUELO || '').trim();
@@ -392,11 +397,11 @@ function openModal(flight) {
       </div>
     </div>
     <div class="modal-time-row">
-      <span class="modal-time${isDelayed ? ' old' : ''}">${sched}</span>
+      <span class="modal-time${timeMoved ? ' old' : ''}">${sched}</span>
       ${showActual ? `
         <span class="modal-time-sep" aria-hidden="true">→</span>
-        <span class="modal-time new">${actual}</span>
-        ${delay ? `<span class="delay-tag">${delay}</span>` : ''}
+        <span class="modal-time new ${timeTone}">${actual}</span>
+        ${delay ? `<span class="delay-tag ${timeTone}">${delay}</span>` : ''}
       ` : ''}
       ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
       ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
@@ -515,8 +520,9 @@ function renderCard(flight) {
   const meta        = getAirlineMeta(flight.NOMBRE_AEROLINEA);
   const sched       = formatTime(flight.HORA_ESTIMADA);
   const actual      = formatTime(flight.HORA_REAL);
-  const isDelayed   = statusKey === 'delayed' || statusKey === 'info';
-  const showActual  = isDelayed && actual !== '—' && actual !== sched;
+  const timeMoved   = TIME_MOVED_KEYS.has(statusKey);
+  const showActual  = timeMoved && actual !== '—' && actual !== sched;
+  const timeTone    = statusKey === 'retimed' ? 'amber' : 'red';
   const delay       = showActual ? formatDelay(flight) : '';
   const gate        = (flight.NRO_PUERTA || '').trim();
   const route       = parseRoute(flight.RUTA0, flight.RUTA);
@@ -561,8 +567,8 @@ function renderCard(flight) {
       <div class="fr-journey">
         <div class="fr-times">
           ${showActual ? `<span class="fr-time-old">${sched}</span>` : ''}
-          <span class="fr-time${showActual ? ' red' : ''}">${showActual ? actual : sched}</span>
-          ${delay ? `<span class="delay-tag">${delay}</span>` : ''}
+          <span class="fr-time${showActual ? ` ${timeTone}` : ''}">${showActual ? actual : sched}</span>
+          ${delay ? `<span class="delay-tag ${timeTone}">${delay}</span>` : ''}
         </div>
         <div class="fr-route-line" aria-hidden="true"></div>
         <div class="fr-dest-wrap">
