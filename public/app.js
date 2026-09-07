@@ -32,6 +32,25 @@ const MESSAGES = {
     offline: 'Sin conexión',
     scrollTop: 'Volver arriba',
     close: 'Cerrar',
+    stOnTime: 'En Horario', stLanded: 'En Tierra', stConfirmed: 'Confirmado',
+    stPreBoarding: 'Pre-Embarque', stBoarding: 'Embarcando', stRetimed: 'Nueva Hora',
+    stDelayed: 'Demorado', stDeparted: 'Despegó', stCancelled: 'Cancelado', stInfo: 'Informes',
+    routeFrom: 'Desde', routeTo: 'Hacia', dirFrom: 'desde', dirTo: 'a',
+    now: 'ahora', inMin: 'en {n} min', inHour: 'en {h}h', inHourMin: 'en {h}h {m}m',
+    flights_one: '{n} vuelo', flights_other: '{n} vuelos',
+    flightsOfTotal: '{shown} de {total} vuelos',
+    delayedCount_one: '{n} demorado', delayedCount_other: '{n} demorados',
+    stops_one: '{n} esc.', stops_other: '{n} esc.',
+    emptySearch: 'Sin resultados para esa búsqueda', emptyBoard: 'No hay vuelos para mostrar',
+    loadError: 'No se pudieron cargar los vuelos', retry: 'Reintentar',
+    gate: 'Puerta', gateShort: 'P.{n}',
+    fullRoute: 'Ruta completa', viewFullRoute: 'Ver ruta completa',
+    track: 'Rastrear vuelo', share: 'Compartir',
+    copied: 'Copiado ✓', copyFailed: 'No se pudo copiar',
+    arrival: 'Llegada', departure: 'Salida',
+    pinAdd: 'Guardar vuelo {n}', pinRemove: 'Quitar vuelo {n}',
+    scheduled: 'programado',
+    cardLabel: 'Vuelo {airline} {n} {dir} {place}, {status}. Ver detalle',
   },
   en: {
     live: 'LIVE',
@@ -50,6 +69,25 @@ const MESSAGES = {
     offline: 'Offline',
     scrollTop: 'Back to top',
     close: 'Close',
+    stOnTime: 'On Time', stLanded: 'Landed', stConfirmed: 'Confirmed',
+    stPreBoarding: 'Pre-Boarding', stBoarding: 'Boarding', stRetimed: 'New Time',
+    stDelayed: 'Delayed', stDeparted: 'Departed', stCancelled: 'Cancelled', stInfo: 'Information',
+    routeFrom: 'From', routeTo: 'To', dirFrom: 'from', dirTo: 'to',
+    now: 'now', inMin: 'in {n} min', inHour: 'in {h}h', inHourMin: 'in {h}h {m}m',
+    flights_one: '{n} flight', flights_other: '{n} flights',
+    flightsOfTotal: '{shown} of {total} flights',
+    delayedCount_one: '{n} delayed', delayedCount_other: '{n} delayed',
+    stops_one: '{n} stop', stops_other: '{n} stops',
+    emptySearch: 'No results for that search', emptyBoard: 'No flights to show',
+    loadError: "Couldn't load flights", retry: 'Retry',
+    gate: 'Gate', gateShort: 'G.{n}',
+    fullRoute: 'Full route', viewFullRoute: 'View full route',
+    track: 'Track flight', share: 'Share',
+    copied: 'Copied ✓', copyFailed: "Couldn't copy",
+    arrival: 'Arrival', departure: 'Departure',
+    pinAdd: 'Save flight {n}', pinRemove: 'Remove flight {n}',
+    scheduled: 'scheduled',
+    cardLabel: 'Flight {airline} {n} {dir} {place}, {status}. View detail',
   },
   'pt-BR': {
     live: 'AO VIVO',
@@ -68,6 +106,25 @@ const MESSAGES = {
     offline: 'Sem conexão',
     scrollTop: 'Voltar ao topo',
     close: 'Fechar',
+    stOnTime: 'No Horário', stLanded: 'Em Solo', stConfirmed: 'Confirmado',
+    stPreBoarding: 'Pré-Embarque', stBoarding: 'Embarcando', stRetimed: 'Novo Horário',
+    stDelayed: 'Atrasado', stDeparted: 'Decolou', stCancelled: 'Cancelado', stInfo: 'Informações',
+    routeFrom: 'De', routeTo: 'Para', dirFrom: 'de', dirTo: 'para',
+    now: 'agora', inMin: 'em {n} min', inHour: 'em {h}h', inHourMin: 'em {h}h {m}m',
+    flights_one: '{n} voo', flights_other: '{n} voos',
+    flightsOfTotal: '{shown} de {total} voos',
+    delayedCount_one: '{n} atrasado', delayedCount_other: '{n} atrasados',
+    stops_one: '{n} esc.', stops_other: '{n} esc.',
+    emptySearch: 'Nenhum resultado para essa busca', emptyBoard: 'Nenhum voo para mostrar',
+    loadError: 'Não foi possível carregar os voos', retry: 'Tentar novamente',
+    gate: 'Portão', gateShort: 'P.{n}',
+    fullRoute: 'Rota completa', viewFullRoute: 'Ver rota completa',
+    track: 'Rastrear voo', share: 'Compartilhar',
+    copied: 'Copiado ✓', copyFailed: 'Não foi possível copiar',
+    arrival: 'Chegada', departure: 'Partida',
+    pinAdd: 'Salvar voo {n}', pinRemove: 'Remover voo {n}',
+    scheduled: 'programado',
+    cardLabel: 'Voo {airline} {n} {dir} {place}, {status}. Ver detalhe',
   },
 };
 
@@ -91,6 +148,13 @@ function resolveLocale() {
 }
 
 let locale = resolveLocale();
+
+// Intl picks the plural category; the catalogue supplies one/other per locale
+function plural(base, n) {
+  const dict = MESSAGES[locale] ?? MESSAGES[FALLBACK];
+  const cat  = new Intl.PluralRules(locale).select(n);
+  return t(`${base}_${cat}` in dict ? `${base}_${cat}` : `${base}_other`, { n });
+}
 
 function t(key, vars) {
   const str = MESSAGES[locale]?.[key] ?? MESSAGES[FALLBACK][key] ?? key;
@@ -157,29 +221,31 @@ const squashStatus = s => (s || '')
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/[^a-z0-9]/g, '');
 
+// label is a message id, not a string: 'boarding' and 'pre-boarding' share a
+// status key but must still read differently on the badge
 const STATUS_MAP = {
-  'on time':       { key: 'on-time',   label: 'En Horario'   },
-  'en horario':    { key: 'on-time',   label: 'En Horario'   },
-  'arrived':       { key: 'arrived',   label: 'En Tierra'    },
-  'landed':        { key: 'arrived',   label: 'En Tierra'    },
-  'en tierra':     { key: 'arrived',   label: 'En Tierra'    },
-  'confirmed':     { key: 'confirmed', label: 'Confirmado'   },
-  'confirmado':    { key: 'confirmed', label: 'Confirmado'   },
-  'pre-boarding':  { key: 'boarding',  label: 'Pre-Embarque' },
-  'pre-embarque':  { key: 'boarding',  label: 'Pre-Embarque' },
-  'preembarcando': { key: 'boarding',  label: 'Pre-Embarque' },
-  'boarding':      { key: 'boarding',  label: 'Embarcando'   },
-  'embarque':      { key: 'boarding',  label: 'Embarcando'   },
-  'new time':      { key: 'retimed',   label: 'Nueva Hora'   },
-  'nueva hora':    { key: 'retimed',   label: 'Nueva Hora'   },
-  'delayed':       { key: 'delayed',   label: 'Demorado'     },
-  'demorado':      { key: 'delayed',   label: 'Demorado'     },
-  'departed':      { key: 'departed',  label: 'Despegó'      },
-  'salida':        { key: 'departed',  label: 'Despegó'      },
-  'cancelled':     { key: 'cancelled', label: 'Cancelado'    },
-  'cancelado':     { key: 'cancelled', label: 'Cancelado'    },
-  'information':   { key: 'info',      label: 'Informes'     },
-  'informes':      { key: 'info',      label: 'Informes'     },
+  'on time':       { key: 'on-time',   label: 'stOnTime'      },
+  'en horario':    { key: 'on-time',   label: 'stOnTime'      },
+  'arrived':       { key: 'arrived',   label: 'stLanded'      },
+  'landed':        { key: 'arrived',   label: 'stLanded'      },
+  'en tierra':     { key: 'arrived',   label: 'stLanded'      },
+  'confirmed':     { key: 'confirmed', label: 'stConfirmed'   },
+  'confirmado':    { key: 'confirmed', label: 'stConfirmed'   },
+  'pre-boarding':  { key: 'boarding',  label: 'stPreBoarding' },
+  'pre-embarque':  { key: 'boarding',  label: 'stPreBoarding' },
+  'preembarcando': { key: 'boarding',  label: 'stPreBoarding' },
+  'boarding':      { key: 'boarding',  label: 'stBoarding'    },
+  'embarque':      { key: 'boarding',  label: 'stBoarding'    },
+  'new time':      { key: 'retimed',   label: 'stRetimed'     },
+  'nueva hora':    { key: 'retimed',   label: 'stRetimed'     },
+  'delayed':       { key: 'delayed',   label: 'stDelayed'     },
+  'demorado':      { key: 'delayed',   label: 'stDelayed'     },
+  'departed':      { key: 'departed',  label: 'stDeparted'    },
+  'salida':        { key: 'departed',  label: 'stDeparted'    },
+  'cancelled':     { key: 'cancelled', label: 'stCancelled'   },
+  'cancelado':     { key: 'cancelled', label: 'stCancelled'   },
+  'information':   { key: 'info',      label: 'stInfo'        },
+  'informes':      { key: 'info',      label: 'stInfo'        },
 };
 
 // Longest key first, so "preboarding" is never swallowed by "boarding"
@@ -229,14 +295,14 @@ function getStatus(flight) {
   const obs = squashStatus(flight.OBSERVACION_INGLES || flight.OBSERVACION);
   if (obs) {
     const hit = STATUS_LOOKUP.find(([key]) => obs.includes(key));
-    if (hit) return hit[1];
+    if (hit) return { key: hit[1].key, label: t(hit[1].label) };
   }
 
   // No usable status text — infer a delay from the times themselves
   const actual = (flight.HORA_REAL || '').trim();
   const sched  = (flight.HORA_ESTIMADA || '').trim();
   if (actual && sched && actual !== sched && delayMinutes(flight) > 4) {
-    return { key: 'delayed', label: 'Demorado' };
+    return { key: 'delayed', label: t('stDelayed') };
   }
 
   return { key: 'scheduled', label: '' };
@@ -321,11 +387,11 @@ function relTimeLabel(flight, statusKey) {
     ? Math.round((when - Date.now()) / 60_000)
     : relMinutes((flight.HORA_REAL || '').trim() || (flight.HORA_ESTIMADA || '').trim());
   if (diff === null || diff < -20 || diff > 360) return '';
-  if (diff <= 1)  return 'ahora';
-  if (diff < 60)  return `en ${diff} min`;
+  if (diff <= 1)  return t('now');
+  if (diff < 60)  return t('inMin', { n: diff });
   const h = Math.floor(diff / 60);
   const m = diff % 60;
-  return m ? `en ${h}h ${m}m` : `en ${h}h`;
+  return m ? t('inHourMin', { h, m }) : t('inHour', { h });
 }
 
 // Status keys that have a .status-badge rule in style.css; anything else
@@ -476,7 +542,7 @@ function openModal(flight) {
   const badgeClass = BADGE_KEYS.has(statusKey) ? statusKey : 'scheduled';
 
   const airportLabel = document.getElementById('airport-select')?.selectedOptions[0]?.textContent || state.airport;
-  const tipoLabel    = state.tipo === 'L' ? 'Llegada' : 'Salida';
+  const tipoLabel    = state.tipo === 'L' ? t('arrival') : t('departure');
   const relTime      = relTimeLabel(flight, statusKey);
 
   const fr24Url = meta.iata && flightNum
@@ -514,9 +580,9 @@ function openModal(flight) {
       ` : ''}
       ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
       ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
-      ${gate ? `<span class="row-gate">P.${gate}</span>` : ''}
+      ${gate ? `<span class="row-gate">${t('gateShort', { n: gate })}</span>` : ''}
     </div>
-    <p class="modal-section-label">Ruta completa</p>
+    <p class="modal-section-label">${t('fullRoute')}</p>
     <div class="modal-route">${stopsHtml}</div>
     <div class="modal-actions">
       ${fr24Url ? `
@@ -525,13 +591,13 @@ function openModal(flight) {
             <circle cx="12" cy="12" r="2" fill="currentColor"/>
             <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
           </svg>
-          Rastrear vuelo
+          ${t('track')}
         </a>` : ''}
       <button class="modal-action" id="modal-share">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
           <path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        Compartir
+        ${t('share')}
       </button>
     </div>
   `;
@@ -546,7 +612,7 @@ function openModal(flight) {
     }
     const copied = await copyText(`${text}\n${location.href}`);
     shareBtn.querySelector('svg').style.display = 'none';
-    shareBtn.lastChild.textContent = copied ? 'Copiado ✓' : 'No se pudo copiar';
+    shareBtn.lastChild.textContent = copied ? t('copied') : t('copyFailed');
   });
 
   lastFocusedEl = document.activeElement;
@@ -592,11 +658,11 @@ function updateSummary(flights, filtered) {
   if (!total) { strip.innerHTML = ''; return; }
 
   const countLabel = state.search && shown !== total
-    ? `<span class="summary-count">${shown} de ${total} vuelos</span>`
-    : `<span class="summary-count">${total} vuelos</span>`;
+    ? `<span class="summary-count">${t('flightsOfTotal', { shown, total })}</span>`
+    : `<span class="summary-count">${plural('flights', total)}</span>`;
 
   strip.innerHTML = delayed
-    ? `${countLabel}<span class="summary-sep">·</span><span class="summary-delayed">${delayed} demorado${delayed !== 1 ? 's' : ''}</span>`
+    ? `${countLabel}<span class="summary-sep">·</span><span class="summary-delayed">${plural('delayedCount', delayed)}</span>`
     : countLabel;
 }
 
@@ -659,7 +725,7 @@ function renderCard(flight) {
   return `
     <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}${stopsOpen ? ' stops-open' : ''}" role="listitem"
       data-flight="${flightNum}" data-id="${cardId}" tabindex="0"
-      aria-label="Vuelo ${meta.abbr} ${flightNum} ${isArrival ? 'desde' : 'a'} ${endpoint}, ${statusLabel || 'programado'}. Ver detalle">
+      aria-label="${t('cardLabel', { airline: meta.abbr, n: flightNum, dir: isArrival ? t('dirFrom') : t('dirTo'), place: endpoint, status: statusLabel || t('scheduled') })}">
       <div class="fr-head">
         ${flight.ID_EMPRESA
           ? `<img class="fr-logo" src="${NAABOL_LOGO(flight.ID_EMPRESA)}" alt="" aria-hidden="true">`
@@ -667,7 +733,7 @@ function renderCard(flight) {
         <span class="fr-airline">${flight.NOMBRE_AEROLINEA || ''}</span>
         <span class="fr-flightnum">${flightNum}</span>
         <button class="pin-btn${pinned ? ' pinned' : ''}"
-          aria-label="${pinned ? 'Quitar' : 'Guardar'} vuelo ${flightNum}"
+          aria-label="${pinned ? t('pinRemove', { n: flightNum }) : t('pinAdd', { n: flightNum })}"
           aria-pressed="${pinned}"
           data-pin="${flightNum}">
           ${pinIcon}
@@ -681,14 +747,14 @@ function renderCard(flight) {
         </div>
         <div class="fr-route-line" aria-hidden="true"></div>
         <div class="fr-dest-wrap">
-          <span class="fr-dest-label">${isArrival ? 'Desde' : 'Hacia'}</span>
+          <span class="fr-dest-label">${isArrival ? t('routeFrom') : t('routeTo')}</span>
           <span class="fr-dest">${endpoint}</span>
           ${route.intermediateCount > 0 ? `
-            <button class="stops-toggle" aria-expanded="${stopsOpen}" aria-label="Ver ruta completa">
+            <button class="stops-toggle" aria-expanded="${stopsOpen}" aria-label="${t('viewFullRoute')}">
               <svg class="stops-chevron" viewBox="0 0 12 12" fill="none" width="10" height="10" aria-hidden="true">
                 <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              ${route.intermediateCount} esc.
+              ${plural('stops', route.intermediateCount)}
             </button>` : ''}
         </div>
       </div>
@@ -702,7 +768,7 @@ function renderCard(flight) {
         ${dotCfg ? `<span class="status-dot ${dotCfg.color}${dotCfg.pulse ? ' pulse' : ''}" aria-hidden="true"></span>` : ''}
         ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
         ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
-        ${gate ? `<div class="gate-badge"><span class="gate-label">Puerta</span><span class="gate-num">${gate}</span></div>` : ''}
+        ${gate ? `<div class="gate-badge"><span class="gate-label">${t('gate')}</span><span class="gate-num">${gate}</span></div>` : ''}
       </div>
     </article>
   `;
@@ -723,7 +789,7 @@ function renderFlights(animate) {
             ? '<circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
             : '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'}
         </svg>
-        <p>${state.search ? 'Sin resultados para esa búsqueda' : 'No hay vuelos para mostrar'}</p>
+        <p>${state.search ? t('emptySearch') : t('emptyBoard')}</p>
       </div>`;
 
   updateSummary(state.flights, filtered);
@@ -784,8 +850,8 @@ async function fetchFlights({ isRefresh = false } = {}) {
           <svg viewBox="0 0 24 24" width="36" height="36" fill="none" aria-hidden="true">
             <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <p>No se pudieron cargar los vuelos</p>
-          <button class="retry-btn" type="button">Reintentar</button>
+          <p>${t('loadError')}</p>
+          <button class="retry-btn" type="button">${t('retry')}</button>
         </div>`;
     }
     console.error(err);
