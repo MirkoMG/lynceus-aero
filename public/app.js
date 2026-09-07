@@ -5,6 +5,115 @@ const THEME_KEY   = 'lynceus_theme';
 const ICON_MOON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ICON_SUN  = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 
+// ── i18n ────────────────────────────────────────────────
+// Bolivia's boards serve a lot of non-Spanish traffic — GOL and Copa routes,
+// and relatives tracking a flight from abroad. Three locales, no library: the
+// catalogue is keyed by string id, and any Portuguese tag resolves to pt-BR
+// since that is the only Portuguese variant this covers.
+const LANG_KEY  = 'lynceus_lang';
+const LOCALES   = ['es', 'en', 'pt-BR'];
+const FALLBACK  = 'es';
+
+const MESSAGES = {
+  es: {
+    live: 'EN VIVO',
+    selectAirport: 'Seleccionar aeropuerto',
+    themeToDark: 'Cambiar a modo oscuro',
+    themeToLight: 'Cambiar a modo claro',
+    arrivals: 'Llegadas',
+    departures: 'Salidas',
+    searchPlaceholder: 'Vuelo, destino o aerolínea…',
+    clearSearch: 'Limpiar búsqueda',
+    sortGroup: 'Ordenar vuelos',
+    sortTime: 'Hora',
+    sortDelayed: 'Demorados primero',
+    sortAirline: 'Aerolínea',
+    flightsList: 'Lista de vuelos',
+    offline: 'Sin conexión',
+    scrollTop: 'Volver arriba',
+    close: 'Cerrar',
+  },
+  en: {
+    live: 'LIVE',
+    selectAirport: 'Select airport',
+    themeToDark: 'Switch to dark mode',
+    themeToLight: 'Switch to light mode',
+    arrivals: 'Arrivals',
+    departures: 'Departures',
+    searchPlaceholder: 'Flight, destination or airline…',
+    clearSearch: 'Clear search',
+    sortGroup: 'Sort flights',
+    sortTime: 'Time',
+    sortDelayed: 'Delayed first',
+    sortAirline: 'Airline',
+    flightsList: 'Flight list',
+    offline: 'Offline',
+    scrollTop: 'Back to top',
+    close: 'Close',
+  },
+  'pt-BR': {
+    live: 'AO VIVO',
+    selectAirport: 'Selecionar aeroporto',
+    themeToDark: 'Mudar para modo escuro',
+    themeToLight: 'Mudar para modo claro',
+    arrivals: 'Chegadas',
+    departures: 'Partidas',
+    searchPlaceholder: 'Voo, destino ou companhia…',
+    clearSearch: 'Limpar busca',
+    sortGroup: 'Ordenar voos',
+    sortTime: 'Hora',
+    sortDelayed: 'Atrasados primeiro',
+    sortAirline: 'Companhia',
+    flightsList: 'Lista de voos',
+    offline: 'Sem conexão',
+    scrollTop: 'Voltar ao topo',
+    close: 'Fechar',
+  },
+};
+
+// 'pt', 'pt-PT', 'PT-br' → 'pt-BR'; anything unrecognised → null
+function matchLocale(tag) {
+  const base = (tag || '').toLowerCase().split('-')[0];
+  if (base === 'pt') return 'pt-BR';
+  return LOCALES.find(l => l.toLowerCase().split('-')[0] === base) || null;
+}
+
+function resolveLocale() {
+  const fromUrl = new URLSearchParams(window.location.search).get('lang');
+  let stored = null;
+  try { stored = localStorage.getItem(LANG_KEY); } catch { /* private mode */ }
+  const candidates = [fromUrl, stored, ...(navigator.languages || [navigator.language])];
+  for (const c of candidates) {
+    const hit = matchLocale(c);
+    if (hit) return hit;
+  }
+  return FALLBACK;
+}
+
+let locale = resolveLocale();
+
+function t(key, vars) {
+  const str = MESSAGES[locale]?.[key] ?? MESSAGES[FALLBACK][key] ?? key;
+  return vars
+    ? str.replace(/\{(\w+)\}/g, (_, n) => (n in vars ? vars[n] : `{${n}}`))
+    : str;
+}
+
+// Static chrome carries its string id in a data attribute so the markup stays
+// declarative and one pass can re-translate everything when the locale changes.
+function applyStaticStrings() {
+  document.documentElement.setAttribute('lang', locale);
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
+  });
+}
+
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem(THEME_KEY, theme);
@@ -12,7 +121,7 @@ function applyTheme(theme) {
   const btn = document.getElementById('theme-btn');
   if (btn) {
     btn.innerHTML = theme === 'dark' ? ICON_SUN : ICON_MOON;
-    btn.setAttribute('aria-label', theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
+    btn.setAttribute('aria-label', theme === 'dark' ? t('themeToLight') : t('themeToDark'));
   }
 }
 
@@ -702,6 +811,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput   = document.getElementById('search-input');
   const searchClear   = document.getElementById('search-clear');
   const searchBar     = document.getElementById('search-bar');
+
+  applyStaticStrings();
 
   // Init theme button icon to match the already-applied data-theme
   applyTheme(document.documentElement.getAttribute('data-theme') || 'light');

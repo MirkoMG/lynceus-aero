@@ -42,15 +42,15 @@
     <div class="header-right">
       <span class="live-badge" id="live-badge">
         <span class="live-dot"></span>
-        <span>EN VIVO</span>
+        <span data-i18n="live">EN VIVO</span>
       </span>
       <span class="last-updated" id="last-updated"></span>
-      <button class="theme-btn" id="theme-btn" aria-label="Cambiar tema"></button>
+      <button class="theme-btn" id="theme-btn" data-i18n-aria="themeToDark" aria-label="Cambiar a modo oscuro"></button>
     </div>
   </header>
 
   <div class="airport-bar">
-    <select id="airport-select" class="airport-select" aria-label="Seleccionar aeropuerto">
+    <select id="airport-select" class="airport-select" data-i18n-aria="selectAirport" aria-label="Seleccionar aeropuerto">
       <option value="Cobija">Cobija · CIJ</option>
       <option value="Jorge Wilstermann">Cochabamba · CBB</option>
       <option value="El ALTo">El Alto · LPB</option>
@@ -71,11 +71,11 @@
   <div class="tabs" role="tablist">
     <button class="tab active" data-tipo="L" role="tab" aria-selected="true">
       <span class="tab-emoji" aria-hidden="true">🛬</span>
-      Llegadas
+      <span data-i18n="arrivals">Llegadas</span>
     </button>
     <button class="tab" data-tipo="S" role="tab" aria-selected="false">
       <span class="tab-emoji" aria-hidden="true">🛫</span>
-      Salidas
+      <span data-i18n="departures">Salidas</span>
     </button>
     <div class="tab-indicator" aria-hidden="true"></div>
   </div>
@@ -86,8 +86,8 @@
         <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.75"/>
         <path d="M13 13l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
       </svg>
-      <input class="search-input" id="search-input" type="search" placeholder="Vuelo, destino o aerolínea…" autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="search-clear" id="search-clear" aria-label="Limpiar búsqueda" tabindex="-1">
+      <input class="search-input" id="search-input" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Vuelo, destino o aerolínea…" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="search-clear" id="search-clear" data-i18n-aria="clearSearch" aria-label="Limpiar búsqueda" tabindex="-1">
         <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
           <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
         </svg>
@@ -95,25 +95,25 @@
     </div>
   </div>
 
-  <div class="sort-bar" id="sort-bar" role="group" aria-label="Ordenar vuelos">
-    <button class="sort-pill active" data-sort="time">Hora</button>
-    <button class="sort-pill" data-sort="delayed">Demorados primero</button>
-    <button class="sort-pill" data-sort="airline">Aerolínea</button>
+  <div class="sort-bar" id="sort-bar" role="group" data-i18n-aria="sortGroup" aria-label="Ordenar vuelos">
+    <button class="sort-pill active" data-sort="time" data-i18n="sortTime">Hora</button>
+    <button class="sort-pill" data-sort="delayed" data-i18n="sortDelayed">Demorados primero</button>
+    <button class="sort-pill" data-sort="airline" data-i18n="sortAirline">Aerolínea</button>
   </div>
 
   <div class="summary-strip" id="summary-strip" aria-live="polite"></div>
 
-  <main id="flights-list" class="flights-list" role="list" aria-label="Lista de vuelos">
+  <main id="flights-list" class="flights-list" role="list" data-i18n-aria="flightsList" aria-label="Lista de vuelos">
   </main>
 
   <div class="offline-banner" id="offline-banner" hidden>
     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
       <path d="M1 1l22 22M9 9a10 10 0 0 0-4 2.5M1.5 7A15 15 0 0 1 8 3.5m8 0A15 15 0 0 1 22.5 7M12 20h.01M8.5 16.5a5 5 0 0 1 5.5-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
-    <span>Sin conexión</span>
+    <span data-i18n="offline">Sin conexión</span>
   </div>
 
-  <button class="scroll-top" id="scroll-top" aria-label="Volver arriba" hidden>
+  <button class="scroll-top" id="scroll-top" data-i18n-aria="scrollTop" aria-label="Volver arriba" hidden>
     <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
       <path d="M3 10l5-5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -122,7 +122,7 @@
   <div class="modal-overlay" id="modal-overlay" hidden>
     <div class="modal-sheet" id="modal-sheet" role="dialog" aria-modal="true">
       <div class="modal-handle" aria-hidden="true"></div>
-      <button class="modal-close" id="modal-close" aria-label="Cerrar">
+      <button class="modal-close" id="modal-close" data-i18n-aria="close" aria-label="Cerrar">
         <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
           <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
         </svg>
