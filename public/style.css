@@ -1229,6 +1229,79 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 .flights-list.no-animate .flight-row { animation: none; }
 
 /* ── Reduced motion ──────────────────────────────────── */
+/* ── Desktop ─────────────────────────────────────────────
+   The layout is mobile-first: body caps at 640px and every control sits
+   on its own full-width row, which on a laptop leaves most of the window
+   empty. From 900px the shell widens, the four control rows pair up two
+   to a line, and the board becomes a card grid rather than one long
+   column. Only these seven children take part — the pull-to-refresh
+   spinner, offline banner, scroll-top button and modal are all
+   position: fixed, so they stay out of the grid. */
+@media (min-width: 900px) {
+  body {
+    max-width: 1240px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "header  header"
+      "airport tabs"
+      "search  sort"
+      "summary summary"
+      "list    list";
+    align-content: start;
+  }
+
+  .header        { grid-area: header; }
+  .airport-bar   { grid-area: airport; }
+  .tabs          { grid-area: tabs; }
+  .search-bar    { grid-area: search; }
+  .sort-bar      { grid-area: sort; }
+  .summary-strip { grid-area: summary; }
+  .flights-list  { grid-area: list; }
+
+  /* Paired rows: match heights so their bottom borders line up */
+  .airport-bar,
+  .tabs,
+  .search-bar,
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    min-height: 3.25rem;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .airport-bar { border-right: 1px solid var(--border); }
+  .search-bar  { border-right: 1px solid var(--border); }
+  .search-wrap { width: 100%; }
+
+  /* One long column of full-width cards wastes the space the grid frees */
+  .flights-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 0.75rem;
+    padding-top: 1rem;
+  }
+
+  /* A bottom sheet on a 1440px screen reads as a phone control stranded
+     on a desktop — centre it as a dialog instead */
+  .modal-overlay { align-items: center; }
+
+  .modal-sheet {
+    max-width: 560px;
+    max-height: 80dvh;
+    border-radius: 18px;
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 1.5rem 1.75rem;
+    transform: translateY(10px) scale(0.985);
+  }
+
+  .modal-overlay.is-open .modal-sheet { transform: translateY(0) scale(1); }
+
+  /* The grab handle only means anything for a draggable sheet */
+  .modal-handle { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flight-row    { animation: none; }
   .live-dot      { animation: none; }
