@@ -1135,6 +1135,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // The tab indicator is positioned from measured rects, which only ran on
+  // click and at startup — fine on a phone, wrong the moment a desktop window
+  // is resized. Re-measure on resize.
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const activeTab = document.querySelector('.tab.active');
+      if (activeTab) updateTabIndicator(activeTab);
+    }, 120);
+  });
+
   // Scroll to top
   const scrollTopBtn = document.getElementById('scroll-top');
   window.addEventListener('scroll', () => {
