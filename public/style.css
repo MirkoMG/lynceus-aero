@@ -219,6 +219,35 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .theme-btn:active { transform: scale(0.88); }
 
+/* Matches .theme-btn, but sized to its own label and with the native
+   select chrome stripped so the two controls read as a pair */
+.lang-select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 34px;
+  padding: 0 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-family: inherit;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: center;
+  transition: background 140ms var(--ease-out), color 140ms var(--ease-out),
+              border-color 140ms var(--ease-out), transform 160ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lang-select:active { transform: scale(0.88); }
+
+@media (hover: hover) and (pointer: fine) {
+  .lang-select:hover { background: var(--surface); color: var(--text); border-color: var(--border-2); }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .theme-btn:hover { background: var(--surface); color: var(--text); border-color: var(--border-2); }
 }

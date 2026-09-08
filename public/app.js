@@ -18,6 +18,7 @@ const MESSAGES = {
   es: {
     live: 'EN VIVO',
     selectAirport: 'Seleccionar aeropuerto',
+    selectLanguage: 'Seleccionar idioma',
     themeToDark: 'Cambiar a modo oscuro',
     themeToLight: 'Cambiar a modo claro',
     arrivals: 'Llegadas',
@@ -55,6 +56,7 @@ const MESSAGES = {
   en: {
     live: 'LIVE',
     selectAirport: 'Select airport',
+    selectLanguage: 'Select language',
     themeToDark: 'Switch to dark mode',
     themeToLight: 'Switch to light mode',
     arrivals: 'Arrivals',
@@ -92,6 +94,7 @@ const MESSAGES = {
   'pt-BR': {
     live: 'AO VIVO',
     selectAirport: 'Selecionar aeroporto',
+    selectLanguage: 'Selecionar idioma',
     themeToDark: 'Mudar para modo escuro',
     themeToLight: 'Mudar para modo claro',
     arrivals: 'Chegadas',
@@ -161,6 +164,17 @@ function t(key, vars) {
   return vars
     ? str.replace(/\{(\w+)\}/g, (_, n) => (n in vars ? vars[n] : `{${n}}`))
     : str;
+}
+
+function setLocale(next) {
+  if (!LOCALES.includes(next) || next === locale) return;
+  locale = next;
+  try { localStorage.setItem(LANG_KEY, locale); } catch { /* private mode */ }
+  applyStaticStrings();
+  // Re-run so the theme button's aria-label picks up the new locale
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
+  writeURLState();
+  renderFlights(false);
 }
 
 // Static chrome carries its string id in a data attribute so the markup stays
@@ -287,6 +301,7 @@ function writeURLState() {
   const p = new URLSearchParams({ aero: state.airport, tipo: state.tipo });
   if (state.sort !== 'time') p.set('sort', state.sort);
   if (state.search.trim())   p.set('q', state.search.trim());
+  if (locale !== FALLBACK)   p.set('lang', locale);
   history.replaceState(null, '', `?${p}`);
 }
 
@@ -879,6 +894,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchBar     = document.getElementById('search-bar');
 
   applyStaticStrings();
+
+  const langSelect = document.getElementById('lang-select');
+  langSelect.value = locale;
+  langSelect.addEventListener('change', () => setLocale(langSelect.value));
 
   // Init theme button icon to match the already-applied data-theme
   applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
