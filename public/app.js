@@ -1,5 +1,6 @@
 const REFRESH_MS  = 60_000;
 const PINS_KEY    = 'lynceus_pins';
+const AIRPORT_KEY = 'lynceus_airport';
 const THEME_KEY   = 'lynceus_theme';
 
 const ICON_MOON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -283,14 +284,42 @@ function togglePin(flightNum) {
   savePins(pins);
 }
 
+// ── Airport preference ──────────────────────────────────
+function storedAirport() {
+  try { return localStorage.getItem(AIRPORT_KEY); } catch { return null; }
+}
+
+function rememberAirport(aero) {
+  try { localStorage.setItem(AIRPORT_KEY, aero); } catch { /* private mode */ }
+}
+
+// Cloudflare resolves the nearest airport from the caller's IP at the edge.
+// Any failure — offline, blocked, slow, or an older engine without
+// AbortSignal.timeout — just leaves the default in place.
+async function detectAirport(valid) {
+  try {
+    const res = await fetch('/api/nearest', { signal: AbortSignal.timeout(2500) });
+    if (!res.ok) return null;
+    const { airport } = await res.json();
+    return valid.has(airport) ? airport : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── URL state ───────────────────────────────────────────
 const SORT_MODES = ['time', 'delayed', 'airline'];
 
 function readURLState() {
   const p = new URLSearchParams(window.location.search);
-  const sort = p.get('sort');
+  const sort  = p.get('sort');
+  // A link's ?aero= wins, then a previously picked airport. Only when there is
+  // neither is the visitor new enough for geolocation to be the right guess.
+  const aero  = p.get('aero');
+  const saved = storedAirport();
   return {
-    airport: p.get('aero') || 'El ALTo',
+    airport: aero || saved || 'El ALTo',
+    airportExplicit: Boolean(aero || saved),
     tipo:    p.get('tipo') === 'S' ? 'S' : 'L',
     sort:    SORT_MODES.includes(sort) ? sort : 'time',
     search:  p.get('q') || '',
@@ -823,6 +852,7 @@ const initURL = readURLState();
 
 const state = {
   airport: initURL.airport,
+  airportExplicit: initURL.airportExplicit,
   tipo:    initURL.tipo,
   sort:    initURL.sort,
   search:  initURL.search,
@@ -884,7 +914,7 @@ function scheduleRefresh() {
 }
 
 // ── Init ────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const airportSelect = document.getElementById('airport-select');
   const tabs          = document.querySelectorAll('.tab');
   const sortPills     = document.querySelectorAll('.sort-pill');
@@ -948,6 +978,8 @@ document.addEventListener('DOMContentLoaded', () => {
   airportSelect.addEventListener('change', () => {
     clearSearch();
     state.airport = airportSelect.value;
+    state.airportExplicit = true;
+    rememberAirport(state.airport);
     writeURLState();
     fetchFlights();
     scheduleRefresh();
@@ -1157,6 +1189,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  if (!state.airportExplicit) {
+    const valid = new Set([...airportSelect.options].map(o => o.value));
+    const detected = await detectAirport(valid);
+    if (detected && detected !== state.airport) {
+      state.airport = detected;
+      airportSelect.value = detected;
+      writeURLState();
+    }
   }
 
   fetchFlights();

@@ -20,6 +20,10 @@ self.addEventListener('fetch', e => {
   const { request } = e;
   if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) return;
 
+  // Nearest-airport is resolved from the caller's IP — caching it would replay
+  // one visitor's location for the next, and a stale hit is worse than none.
+  if (new URL(request.url).pathname === '/api/nearest') return;
+
   e.respondWith(
     fetch(request)
       .then(res => {
