@@ -285,6 +285,19 @@ function togglePin(flightNum) {
 }
 
 // ── Airport preference ──────────────────────────────────
+// The API's airport keys are not the city names ('Jorge Wilstermann', not
+// 'Cochabamba'), so a hand-typed or stale ?aero= is easy to get wrong. An
+// unrecognised value used to reach the <select> untouched, which leaves it with
+// selectedIndex -1 — blank on desktop, but rendered as the FIRST option on iOS
+// and several mobile browsers, i.e. Cobija, for any bad value.
+const KNOWN_AERO = new Set(['Cobija', 'Jorge Wilstermann', 'El ALTo', 'Guayamerin',
+  'Oruro', 'Potosi', 'Riberalta', 'Rurrenabaque', 'Viru Viru', 'Sucre', 'Tarija',
+  'Trinidad', 'Uyuni', 'Yacuiba']);
+
+function validAero(value) {
+  return value && KNOWN_AERO.has(value) ? value : null;
+}
+
 function storedAirport() {
   try { return localStorage.getItem(AIRPORT_KEY); } catch { return null; }
 }
@@ -315,8 +328,8 @@ function readURLState() {
   const sort  = p.get('sort');
   // A link's ?aero= wins, then a previously picked airport. Only when there is
   // neither is the visitor new enough for geolocation to be the right guess.
-  const aero  = p.get('aero');
-  const saved = storedAirport();
+  const aero  = validAero(p.get('aero'));
+  const saved = validAero(storedAirport());
   return {
     airport: aero || saved || 'El ALTo',
     airportExplicit: Boolean(aero || saved),
