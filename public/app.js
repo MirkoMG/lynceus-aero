@@ -643,7 +643,7 @@ function openModal(flight) {
     <div class="modal-route">${stopsHtml}</div>
     <div class="modal-actions">
       ${fr24Url ? `
-        <a class="modal-action" href="${fr24Url}" target="_blank" rel="noopener">
+        <a class="modal-action" href="${fr24Url}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="2" fill="currentColor"/>
             <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
