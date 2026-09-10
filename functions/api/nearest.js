@@ -48,11 +48,35 @@ export function nearestAirport(lat, lon) {
   return best && best.distanceKm <= MAX_DISTANCE_KM ? best : null;
 }
 
+// Ranked candidates for a coordinate — used by ?debug=1 to show why a given
+// airport was chosen, since IP geolocation is easy to disbelieve and hard to
+// argue with otherwise.
+export function rankAirports(lat, lon) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
+  return AIRPORTS
+    .map(a => ({ iata: a.iata, aero: a.aero, km: Math.round(haversineKm(lat, lon, a.lat, a.lon)) }))
+    .sort((x, y) => x.km - y.km);
+}
+
 export async function onRequestGet({ request }) {
   // Cloudflare resolves this from the client IP at the edge — no third-party
   // lookup, no permission prompt, and nothing about the visitor is stored.
   const cf = request.cf ?? {};
-  const hit = nearestAirport(parseFloat(cf.latitude), parseFloat(cf.longitude));
+  const lat = parseFloat(cf.latitude);
+  const lon = parseFloat(cf.longitude);
+  const hit = nearestAirport(lat, lon);
+
+  // ?debug=1 echoes back what the edge thought the caller's location was
+  if (new URL(request.url).searchParams.get('debug') === '1') {
+    return Response.json({
+      airport: hit ? hit.aero : DEFAULT_AERO,
+      fallback: !hit,
+      sawCoordinates: Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null,
+      city: cf.city ?? null,
+      country: cf.country ?? null,
+      nearest: rankAirports(lat, lon).slice(0, 5),
+    }, { headers: { 'Cache-Control': 'no-store' } });
+  }
 
   return Response.json(
     hit

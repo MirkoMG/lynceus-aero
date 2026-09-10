@@ -30,7 +30,7 @@ app.get('/api/flights', async (req, res) => {
 // There is no request.cf outside Cloudflare, so dev takes ?lat=&lon= to
 // exercise the same resolver the Pages Function runs in production.
 app.get('/api/nearest', async (req, res) => {
-  const { nearestAirport, DEFAULT_AERO } = await import('./functions/api/nearest.js');
+  const { nearestAirport, rankAirports, DEFAULT_AERO } = await import('./functions/api/nearest.js');
   // LYNCEUS_DEV_LATLON="-17.78,-63.18" pretends the request came from there,
   // which is the only way to exercise the detection path off Cloudflare.
   const [envLat, envLon] = (process.env.LYNCEUS_DEV_LATLON || '').split(',');
@@ -39,6 +39,16 @@ app.get('/api/nearest', async (req, res) => {
   const hit = nearestAirport(lat, lon);
 
   res.set('Cache-Control', 'no-store');
+
+  if (req.query.debug === '1') {
+    return res.json({
+      airport: hit ? hit.aero : DEFAULT_AERO,
+      fallback: !hit,
+      sawCoordinates: Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null,
+      nearest: rankAirports(lat, lon).slice(0, 5),
+    });
+  }
+
   res.json(hit
     ? { airport: hit.aero, iata: hit.iata, distanceKm: Math.round(hit.distanceKm) }
     : { airport: DEFAULT_AERO, fallback: true });
