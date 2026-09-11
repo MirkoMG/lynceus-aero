@@ -40,6 +40,12 @@ server.js      — local dev Express proxy (not deployed)
 - **Mobile gestures** — custom pull-to-refresh (native disabled via `overscroll-behavior-y: contain`) and swipe-down to dismiss the bottom sheet; both in `app.js`
 - **PWA** — installable; `sw.js` uses network-first with cache fallback so the last-seen board still opens offline
 - **Logos on dark chips** — NAABOL serves light-on-dark logos, so `<img>` logos always sit on a `#191922` chip in both themes
+- **Flightradar24 links** — must carry `rel="noopener noreferrer"` and
+  `referrerpolicy="no-referrer"`. FR24 answers **451 Unavailable For Legal Reasons**
+  when a request arrives with a `Referer` it does not expect; the same URL typed
+  directly loads fine. Do not drop these attributes. Note FR24 also has no data at
+  all for many Bolivian domestic flights and paywalls the history of the rest, so
+  the action is labelled "Ver en Flightradar24", not "track"
 - **Route parsing** — the API pads routes with numeric placeholders (`"SANTA CRUZ - 000"`); `parseRoute()` drops all-digit stops
 
 ## NAABOL API
