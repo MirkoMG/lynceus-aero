@@ -263,6 +263,43 @@ const STATUS_MAP = {
   'informes':      { key: 'info',      label: 'stInfo'        },
 };
 
+// COD_COMENTARIO is a stable numeric status code, and it is better data than
+// OBSERVACION: one code covers both the 'PRE-EMBARQUE' and 'PREEMBARCANDO'
+// spellings, and several distinct codes share a single label, so the code
+// separates cases the text collapses together.
+//
+// Only codes observed alongside real text are mapped here. Codes 11, 19, 76 and
+// 77 do occur, but always with an empty OBSERVACION, so their meaning is not
+// known — they deliberately fall through to the text and time heuristics rather
+// than being guessed at. logUnmappedCode() reports any code carrying text that
+// is missing from this table, which is how the remaining ones get decoded.
+const STATUS_CODES = {
+  4:  { key: 'delayed',   label: 'stDelayed'     },
+  6:  { key: 'boarding',  label: 'stBoarding'    },
+  8:  { key: 'on-time',   label: 'stOnTime'      },
+  16: { key: 'delayed',   label: 'stDelayed'     },
+  18: { key: 'retimed',   label: 'stRetimed'     },
+  22: { key: 'on-time',   label: 'stOnTime'      },
+  35: { key: 'on-time',   label: 'stOnTime'      },
+  54: { key: 'delayed',   label: 'stDelayed'     },
+  71: { key: 'arrived',   label: 'stLanded'      },
+  72: { key: 'boarding',  label: 'stPreBoarding' },
+  74: { key: 'confirmed', label: 'stConfirmed'   },
+  82: { key: 'confirmed', label: 'stConfirmed'   },
+};
+
+const reportedCodes = new Set();
+
+// A code we have no mapping for is only news when it arrives with text, since
+// that is the pairing that lets it be added to STATUS_CODES.
+function logUnmappedCode(code, flight) {
+  if (reportedCodes.has(code)) return;
+  const text = (flight.OBSERVACION || '').trim() || (flight.OBSERVACION_INGLES || '').trim();
+  if (!text) return;
+  reportedCodes.add(code);
+  console.info(`[lynceus] unmapped COD_COMENTARIO ${code} → ${text}`);
+}
+
 // Longest key first, so "preboarding" is never swallowed by "boarding"
 const STATUS_LOOKUP = Object.entries(STATUS_MAP)
   .map(([k, v]) => [squashStatus(k), v])
@@ -349,6 +386,13 @@ function writeURLState() {
 
 // ── Flight helpers ──────────────────────────────────────
 function getStatus(flight) {
+  const code = Number.parseInt(flight.COD_COMENTARIO, 10);
+  if (Number.isInteger(code)) {
+    const byCode = STATUS_CODES[code];
+    if (byCode) return { key: byCode.key, label: t(byCode.label) };
+    logUnmappedCode(code, flight);
+  }
+
   const obs = squashStatus(flight.OBSERVACION_INGLES || flight.OBSERVACION);
   if (obs) {
     const hit = STATUS_LOOKUP.find(([key]) => obs.includes(key));
