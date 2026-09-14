@@ -65,6 +65,13 @@ Key response fields:
 - `ID_EMPRESA` — airline code used for logos (e.g. B50015 = BoA)
 - `HORA_ESTIMADA` — scheduled time HH:MM
 - `HORA_REAL` — actual time HH:MM (empty if on time)
+- `COD_COMENTARIO` — **the authoritative status code**, and better data than the
+  text: code 72 covers both `PRE-EMBARQUE` and `PREEMBARCANDO`, and codes 4/16/54
+  all read `DEMORADO`, so the code separates cases the wording collapses.
+  `getStatus()` tries it first. Codes 11, 19, 76 and 77 occur with an empty
+  `OBSERVACION` and are **not yet decoded** — they are left unmapped on purpose
+  rather than guessed at, and `logUnmappedCode()` prints any code that turns up
+  carrying text so the table can be extended from real observations
 - `OBSERVACION` — status in Spanish
 - `OBSERVACION_INGLES` — status in English, right-padded with spaces. Spacing and
   hyphenation are inconsistent (`PRE-BOARDING`, `PRE BOARDING`, `PREEMBARCANDO`),
