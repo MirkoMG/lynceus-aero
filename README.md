@@ -9,7 +9,8 @@ A mobile-first flight information display for Bolivian airports, built on top of
 - Search by flight number, destination, or airline (accent-insensitive)
 - Sort by time, delays first, or airline
 - Pin flights to track at the top
-- Tap any flight for a detail sheet: full route, share, and Flightradar24 tracking
+- Tap any flight for a detail sheet: live journey progress between both airports
+  (domestic flights), aircraft route, share, and a Flightradar24 lookup
 - Pull to refresh, swipe down to dismiss the sheet
 - Installable PWA — the last-seen board still opens offline
 - Available in Spanish, English and Brazilian Portuguese

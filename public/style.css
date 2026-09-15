@@ -548,6 +548,11 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   gap: 0.5rem;
 }
 
+.fr-logo-wrap { flex-shrink: 0; line-height: 0; }
+.fr-logo-wrap .airline-chip             { display: none; }
+.fr-logo-wrap.logo-error .fr-logo       { display: none; }
+.fr-logo-wrap.logo-error .airline-chip  { display: inline-flex; width: 44px; height: 44px; border-radius: 8px; }
+
 .fr-logo {
   flex-shrink: 0;
   width: 44px;
@@ -638,6 +643,26 @@ img.fr-logo {
   min-width: 16px;
 }
 
+/* On arrival cards the connector doubles as a progress track */
+.fr-route-line.has-progress::after { display: none; }
+
+.fr-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 1px;
+  background: var(--purple);
+}
+
+.fr-progress-plane {
+  position: absolute;
+  top: 50%;
+  color: var(--purple);
+  line-height: 0;
+  transform: translate(-50%, -50%);
+}
+
+.fr-progress-plane.estimated { opacity: 0.55; }
+
 .fr-route-line::after {
   content: '';
   position: absolute;
@@ -649,6 +674,10 @@ img.fr-logo {
   border-right: 1.5px solid var(--border-2);
   transform: translateY(-50%) rotate(45deg);
 }
+
+/* Arrivals put the origin first, so each side swaps which way it aligns */
+.fr-journey.inbound .fr-dest-wrap { align-items: flex-start; }
+.fr-journey.inbound .fr-times     { align-items: flex-end; text-align: right; }
 
 .fr-dest-wrap {
   flex-shrink: 0;
@@ -772,6 +801,61 @@ img.fr-logo {
   background: var(--purple-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* ── Journey progress (detail sheet) ─────────────────── */
+.journey {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.125rem;
+}
+
+.journey-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  flex-shrink: 0;
+  min-width: 2.75rem;
+}
+
+.journey-code {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.journey-time {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.journey-track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border-2);
+}
+
+.journey-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 2px;
+  background: var(--purple);
+  transition: width 400ms var(--ease-out);
+}
+
+.journey-plane {
+  position: absolute;
+  top: 50%;
+  color: var(--purple);
+  line-height: 0;
+  transform: translate(-50%, -50%);
+  transition: left 400ms var(--ease-out);
 }
 
 .pin-btn {
@@ -1053,6 +1137,23 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   padding: 0.4375rem 0;
 }
 
+.route-stop.off-leg .route-stop-name { color: var(--text-3); font-weight: 500; }
+.route-stop.off-leg .route-stop-dot { border-color: var(--border); }
+.route-stop.on-leg  .route-stop-name { color: var(--text); font-weight: 700; }
+
+.route-here { font-size: 0.75rem; font-weight: 500; color: var(--text-3); }
+
+.route-caption {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0.5rem 0 0.25rem;
+}
+
+.route-caption:first-child { margin-top: 0; }
+
 .route-stop-line {
   display: grid;
   grid-template-columns: 14px 1fr;
@@ -1063,10 +1164,13 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   content: '';
   width: 2px;
   height: 100%;
-  background: var(--border-2);
+  background: var(--border);
   justify-self: center;
   border-radius: 1px;
 }
+
+/* the one hop that is actually this flight */
+.route-stop-line.on-leg::before { background: var(--purple); }
 
 
 /* ── Empty / Loading ─────────────────────────────────── */

@@ -46,6 +46,8 @@ const MESSAGES = {
     loadError: 'No se pudieron cargar los vuelos', retry: 'Reintentar',
     gate: 'Puerta', gateShort: 'P.{n}',
     fullRoute: 'Ruta del avión',
+    youAreHere: 'aquí', journeyApprox: 'estimado', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
+    journeyOnWay: 'En el aire', journeyBefore: 'Por salir', journeyDone: 'Completado',
     track: 'Ver en Flightradar24', share: 'Compartir',
     copied: 'Copiado ✓', copyFailed: 'No se pudo copiar',
     arrival: 'Llegada', departure: 'Salida',
@@ -83,6 +85,8 @@ const MESSAGES = {
     loadError: "Couldn't load flights", retry: 'Retry',
     gate: 'Gate', gateShort: 'G.{n}',
     fullRoute: 'Aircraft route',
+    youAreHere: 'here', journeyApprox: 'estimated', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
+    journeyOnWay: 'In the air', journeyBefore: 'Not departed', journeyDone: 'Completed',
     track: 'View on Flightradar24', share: 'Share',
     copied: 'Copied ✓', copyFailed: "Couldn't copy",
     arrival: 'Arrival', departure: 'Departure',
@@ -120,6 +124,8 @@ const MESSAGES = {
     loadError: 'Não foi possível carregar os voos', retry: 'Tentar novamente',
     gate: 'Portão', gateShort: 'P.{n}',
     fullRoute: 'Rota da aeronave',
+    youAreHere: 'aqui', journeyApprox: 'estimado', thisFlight: 'Este voo', earlierToday: 'Antes, a mesma aeronave', laterToday: 'Depois, a mesma aeronave',
+    journeyOnWay: 'No ar', journeyBefore: 'A partir', journeyDone: 'Concluído',
     track: 'Ver no Flightradar24', share: 'Compartilhar',
     copied: 'Copiado ✓', copyFailed: 'Não foi possível copiar',
     arrival: 'Chegada', departure: 'Partida',
@@ -316,6 +322,160 @@ function togglePin(flightNum) {
   const pins = getPins();
   pins.has(flightNum) ? pins.delete(flightNum) : pins.add(flightNum);
   savePins(pins);
+}
+
+// ── Bolivian airports ───────────────────────────────────
+// `city` is how the airport appears inside RUTA0, which uses city names rather
+// than the ?aero= keys ('LA PAZ' for El Alto, 'SANTA CRUZ' for Viru Viru).
+const BOLIVIAN_AIRPORTS = [
+  { aero: 'El ALTo',           code: 'LPB', city: 'La Paz',       lat: -16.51027, lon: -68.18942 },
+  { aero: 'Viru Viru',         code: 'VVI', city: 'Santa Cruz',   lat: -17.6448,  lon: -63.1354  },
+  { aero: 'Jorge Wilstermann', code: 'CBB', city: 'Cochabamba',   lat: -17.42111, lon: -66.1771  },
+  { aero: 'Sucre',             code: 'SRE', city: 'Sucre',        lat: -19.24684, lon: -65.14961 },
+  { aero: 'Tarija',            code: 'TJA', city: 'Tarija',       lat: -21.5557,  lon: -64.7013  },
+  { aero: 'Potosi',            code: 'POI', city: 'Potosi',       lat: -19.54333, lon: -65.72373 },
+  { aero: 'Oruro',             code: 'ORU', city: 'Oruro',        lat: -17.95615, lon: -67.07583 },
+  { aero: 'Trinidad',          code: 'TDD', city: 'Trinidad',     lat: -14.8187,  lon: -64.918   },
+  { aero: 'Cobija',            code: 'CIJ', city: 'Cobija',       lat: -11.03911, lon: -68.78277 },
+  { aero: 'Riberalta',         code: 'RIB', city: 'Riberalta',    lat: -11.00935, lon: -66.07547 },
+  { aero: 'Guayamerin',        code: 'GYA', city: 'Guayaramerin', lat: -10.88856, lon: -65.38096 },
+  { aero: 'Rurrenabaque',      code: 'RBQ', city: 'Rurrenabaque', lat: -14.4279,  lon: -67.4968  },
+  { aero: 'Uyuni',             code: 'UYU', city: 'Uyuni',        lat: -20.4413,  lon: -66.85755 },
+  { aero: 'Yacuiba',           code: 'BYC', city: 'Yacuiba',      lat: -21.9609,  lon: -63.6517  },
+];
+
+// Cities RUTA0 reaches outside Bolivia. Coordinates from the OurAirports dataset;
+// 'Panama' and 'Tocumen' are the same airport, which is why the feed's
+// "PANAMA  -  TOCUMEN" looks like two stops.
+const OUTSIDE_AIRPORTS = [
+  { city: 'Sao Paulo',         code: 'GRU', lat: -23.4313, lon: -46.47   },
+  { city: 'Buenos Aires',      code: 'EZE', lat: -34.8222, lon: -58.5358 },
+  { city: 'Lima',              code: 'LIM', lat: -12.0219, lon: -77.1143 },
+  { city: 'Miami',             code: 'MIA', lat:  25.796,  lon: -80.2898 },
+  { city: 'Madrid',            code: 'MAD', lat:  40.4934, lon:  -3.5722 },
+  { city: 'Santiago De Chile', code: 'SCL', lat: -33.393,  lon: -70.7858 },
+  { city: 'Santiago',          code: 'SCL', lat: -33.393,  lon: -70.7858 },
+  { city: 'Bogota',            code: 'BOG', lat:   4.7016, lon: -74.1469 },
+  { city: 'Iquique',           code: 'IQQ', lat: -20.5363, lon: -70.1814 },
+  { city: 'Asuncion',          code: 'ASU', lat: -25.2402, lon: -57.5192 },
+  { city: 'Panama',            code: 'PTY', lat:   9.0714, lon: -79.3835 },
+  { city: 'Tocumen',           code: 'PTY', lat:   9.0714, lon: -79.3835 },
+  { city: 'Cuzco',             code: 'CUZ', lat: -13.5357, lon: -71.9388 },
+];
+
+// Block time from great-circle distance. Fitted against seven legs whose real
+// duration we could read off both boards (LPB-VVI 65m, CBB-VVI 50m, LPB-CBB
+// 45m): 800 km/h plus 25 minutes of taxi, climb and approach lands within a
+// mean of 1.9 minutes. Good enough to place an aircraft on a bar; not a
+// substitute for a real departure time, so anything using it is flagged.
+const CRUISE_KMH = 800;
+const GROUND_MIN = 25;
+
+function estimateLegMinutes(a, b) {
+  if (!a || !b) return null;
+  const R = 6371, rad = d => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const h = Math.sin(dLat / 2) ** 2 +
+            Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  const km = 2 * R * Math.asin(Math.sqrt(h));
+  return Math.round((km / CRUISE_KMH) * 60 + GROUND_MIN);
+}
+
+function airportByCity(name) {
+  const n = norm(name);
+  return n ? BOLIVIAN_AIRPORTS.find(a => norm(a.city) === n) || null : null;
+}
+
+function anyAirportByCity(name) {
+  const n = norm(name);
+  if (!n) return null;
+  return BOLIVIAN_AIRPORTS.find(a => norm(a.city) === n)
+      || OUTSIDE_AIRPORTS.find(a => norm(a.city) === n)
+      || null;
+}
+
+function airportByAero(value) {
+  return BOLIVIAN_AIRPORTS.find(a => a.aero === value) || null;
+}
+
+// ── Journey ─────────────────────────────────────────────
+// A domestic leg appears on two boards: departures at its origin and arrivals at
+// its destination. The route fix tells us which city holds the other end, so one
+// request to the existing endpoint is enough — no fan-out across all 14 boards.
+// International legs have no counterpart board and simply return null.
+const journeyCache = new Map();
+const boardCache   = new Map();
+let   progressRun  = 0;
+
+const PLANE_SVG = `<svg viewBox="0 0 24 24" width="16" height="16"><path d="M21 15.5v-1.8l-7.2-4.5V3.5a1.3 1.3 0 1 0-2.6 0v5.7L4 13.7v1.8l7.2-2.25V18l-1.8 1.35V21l3.15-.9 3.15.9v-1.65L13.8 18v-5.25L21 15.5z" fill="currentColor" transform="rotate(90 12 12)"/></svg>`;
+
+// Every arrival from La Paz wants the same El Alto departures board, so cache the
+// promise rather than the result — 20 cards resolve from one request.
+function loadBoard(aero, tipo) {
+  const key = `${aero}|${tipo}`;
+  if (!boardCache.has(key)) {
+    boardCache.set(key, fetch(`/api/flights?aero=${encodeURIComponent(aero)}&tipo=${tipo}`,
+        { signal: AbortSignal.timeout(6000) })
+      .then(r => (r.ok ? r.json() : []))
+      .catch(() => []));
+  }
+  return boardCache.get(key);
+}
+
+async function loadJourney(flight, route, isArrival) {
+  const here     = airportByAero(state.airport);
+  const fromCity = isArrival ? route.inboundFrom : route.outboundTo;
+  const there    = airportByCity(fromCity);
+  if (!here) return null;
+
+  // No Bolivian board holds the other end (Bogota, Miami, Madrid...). The feed
+  // gives no departure time for those, so derive one from the distance and mark
+  // the result approximate rather than pretending we were told.
+  if (!there || here.aero === there.aero) {
+    const outside = isArrival ? anyAirportByCity(fromCity) : null;
+    const mins    = outside && estimateLegMinutes(outside, here);
+    const arrive  = actualAt(flight) || scheduledAt(flight);
+    if (!outside || !mins || !arrive) return null;
+    return {
+      from: outside, to: here,
+      departAt: new Date(arrive.getTime() - mins * 60_000),
+      arriveAt: arrive,
+      estimated: true,
+    };
+  }
+
+  const key = `${flight.IDDW_ITINERARIO || flight.NRO_VUELO}|${there.aero}`;
+  if (journeyCache.has(key)) return journeyCache.get(key);
+
+  const mine = actualAt(flight) || scheduledAt(flight);
+  if (!mine) return null;
+
+  try {
+    const rows = await loadBoard(there.aero, isArrival ? 'S' : 'L');
+
+    // Same flight number can run twice in a day, so require the counterpart to
+    // fall on the correct side of this leg and pick the closest such match.
+    const MAX_LEG_MS = 5 * 60 * 60_000;
+    let best = null;
+    for (const r of rows) {
+      if (r.ID_EMPRESA !== flight.ID_EMPRESA) continue;
+      if ((r.NRO_VUELO || '').trim() !== (flight.NRO_VUELO || '').trim()) continue;
+      const when = actualAt(r) || scheduledAt(r);
+      if (!when) continue;
+      const gap = isArrival ? mine - when : when - mine;
+      if (gap <= 0 || gap > MAX_LEG_MS) continue;
+      if (!best || gap < best.gap) best = { gap, when, record: r };
+    }
+    if (!best) return null;
+
+    const journey = isArrival
+      ? { from: there, to: here, departAt: best.when, arriveAt: mine }
+      : { from: here, to: there, departAt: mine,      arriveAt: best.when };
+    journeyCache.set(key, journey);
+    return journey;
+  } catch {
+    return null;
+  }
 }
 
 // ── Airport preference ──────────────────────────────────
@@ -652,16 +812,35 @@ function openModal(flight) {
     ? `https://www.flightradar24.com/data/flights/${meta.iata.toLowerCase()}${flightNum.replace(/\s+/g, '')}`
     : null;
 
-  const stops = route.stops.length ? route.stops : [route.label];
-  const stopsHtml = stops.map((stop, i) => {
-    const isFirst = i === 0;
-    const isLast  = i === stops.length - 1;
+  // RUTA0 never contains the airport you are standing in, so on its own the list
+  // reads as four unexplained cities — for an arrival at Cochabamba, Cochabamba
+  // is absent and only the last entry is this flight's origin. Splice the current
+  // airport onto the correct end and mark the single hop that is actually your
+  // flight; everything else is the same aircraft earlier or later in its day.
+  const isArr     = state.tipo === 'L';
+  const hereCity  = airportByAero(state.airport)?.city || state.airport;
+  const published = route.stops.length ? route.stops : [route.label];
+  const chain     = isArr ? [...published, hereCity] : [hereCity, ...published];
+
+  // the two ends of this leg: last pair on arrivals, first pair on departures
+  const legFrom = isArr ? chain.length - 2 : 0;
+  const legTo   = legFrom + 1;
+
+  const stopsHtml = chain.map((stop, i) => {
+    const onLeg = i === legFrom || i === legTo;
+    const here  = isArr ? i === chain.length - 1 : i === 0;
+    const caption = i === legFrom
+      ? t('thisFlight')
+      : (!isArr && i === legTo + 1) ? t('laterToday')
+      : (isArr && i === 0 && legFrom > 0) ? t('earlierToday')
+      : '';
     return `
-      <div class="route-stop">
-        <div class="route-stop-dot${isFirst || isLast ? ' filled' : ''}"></div>
-        <span class="route-stop-name">${stop}</span>
+      ${caption ? `<p class="route-caption">${caption}</p>` : ''}
+      <div class="route-stop${onLeg ? ' on-leg' : ' off-leg'}">
+        <div class="route-stop-dot${onLeg ? ' filled' : ''}"></div>
+        <span class="route-stop-name">${stop}${here ? ` <span class="route-here">· ${t('youAreHere')}</span>` : ''}</span>
       </div>
-      ${!isLast ? '<div class="route-stop-line"></div>' : ''}
+      ${i < chain.length - 1 ? `<div class="route-stop-line${i === legFrom ? ' on-leg' : ''}"></div>` : ''}
     `;
   }).join('');
 
@@ -685,6 +864,7 @@ function openModal(flight) {
       ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
       ${gate ? `<span class="row-gate">${t('gateShort', { n: gate })}</span>` : ''}
     </div>
+    <div id="modal-journey" data-for="${flight.IDDW_ITINERARIO || flightNum}"></div>
     <p class="modal-section-label">${t('fullRoute')}</p>
     <div class="modal-route">${stopsHtml}</div>
     <div class="modal-actions">
@@ -716,6 +896,41 @@ function openModal(flight) {
     const copied = await copyText(`${text}\n${location.href}`);
     shareBtn.querySelector('svg').style.display = 'none';
     shareBtn.lastChild.textContent = copied ? t('copied') : t('copyFailed');
+  });
+
+  // Departures are all at 0% until the aircraft leaves, so the bar only earns
+  // its place on arrivals, where watching the plane close in is the whole point.
+  const wantJourney = state.tipo === 'L';
+  (wantJourney ? loadJourney(flight, route, true) : Promise.resolve(null)).then(j => {
+    const slot = document.getElementById('modal-journey');
+    // The sheet may have been closed and reopened on another flight by now
+    if (!j || !slot || slot.dataset.for !== String(flight.IDDW_ITINERARIO || flightNum)) return;
+
+    const fmt = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const span = j.arriveAt - j.departAt;
+    const pct  = Math.max(0, Math.min(1, (Date.now() - j.departAt) / (span || 1)));
+    const phase = pct <= 0 ? t('journeyBefore') : pct >= 1 ? t('journeyDone') : t('journeyOnWay');
+    const mins = Math.round(span / 60_000);
+    const dur  = mins >= 60 ? `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m` : `${mins} min`;
+
+    slot.innerHTML = `
+      <p class="modal-section-label">${phase} · ${dur}${j.estimated ? ` · ${t('journeyApprox')}` : ''}</p>
+      <div class="journey">
+        <div class="journey-end">
+          <span class="journey-code">${j.from.code}</span>
+          <span class="journey-time">${j.estimated ? '~' : ''}${fmt(j.departAt)}</span>
+        </div>
+        <div class="journey-track">
+          <div class="journey-fill" style="width:${(pct * 100).toFixed(1)}%"></div>
+          <div class="journey-plane" style="left:${(pct * 100).toFixed(1)}%" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19"><path d="M21 15.5v-1.8l-7.2-4.5V3.5a1.3 1.3 0 1 0-2.6 0v5.7L4 13.7v1.8l7.2-2.25V18l-1.8 1.35V21l3.15-.9 3.15.9v-1.65L13.8 18v-5.25L21 15.5z" fill="currentColor" transform="rotate(90 12 12)"/></svg>
+          </div>
+        </div>
+        <div class="journey-end">
+          <span class="journey-code">${j.to.code}</span>
+          <span class="journey-time">${fmt(j.arriveAt)}</span>
+        </div>
+      </div>`;
   });
 
   lastFocusedEl = document.activeElement;
@@ -830,7 +1045,11 @@ function renderCard(flight) {
       aria-label="${t('cardLabel', { airline: meta.abbr, n: flightNum, dir: isArrival ? t('dirFrom') : t('dirTo'), place: endpoint, status: statusLabel || t('scheduled') })}">
       <div class="fr-head">
         ${flight.ID_EMPRESA
-          ? `<img class="fr-logo" src="${NAABOL_LOGO(flight.ID_EMPRESA)}" alt="" aria-hidden="true">`
+          ? `<span class="fr-logo-wrap">
+               <img class="fr-logo" src="${NAABOL_LOGO(flight.ID_EMPRESA)}" alt="" aria-hidden="true"
+                 onerror="this.closest('.fr-logo-wrap').classList.add('logo-error')">
+               <span class="fr-logo airline-chip ${meta.cls}">${meta.abbr}</span>
+             </span>`
           : `<span class="fr-logo airline-chip ${meta.cls}">${meta.abbr}</span>`}
         <span class="fr-airline">${flight.NOMBRE_AEROLINEA || ''}</span>
         <span class="fr-flightnum">${flightNum}</span>
@@ -841,17 +1060,21 @@ function renderCard(flight) {
           ${pinIcon}
         </button>
       </div>
-      <div class="fr-journey">
-        <div class="fr-times">
-          ${showActual ? `<span class="fr-time-old">${sched}</span>` : ''}
-          <span class="fr-time${showActual ? ` ${timeTone}` : ''}">${showActual ? actual : sched}</span>
-          ${delay ? `<span class="delay-tag ${timeTone}">${delay}</span>` : ''}
-        </div>
-        <div class="fr-route-line" aria-hidden="true"></div>
-        <div class="fr-dest-wrap">
-          <span class="fr-dest-label">${isArrival ? t('routeFrom') : t('routeTo')}</span>
-          <span class="fr-dest">${endpoint}</span>
-        </div>
+      <div class="fr-journey${isArrival ? ' inbound' : ''}">
+        ${[
+          `<div class="fr-dest-wrap">
+             <span class="fr-dest-label">${isArrival ? t('routeFrom') : t('routeTo')}</span>
+             <span class="fr-dest">${endpoint}</span>
+           </div>`,
+          `<div class="fr-route-line" data-leg="${cardId}" aria-hidden="true"></div>`,
+          `<div class="fr-times">
+             ${showActual ? `<span class="fr-time-old">${sched}</span>` : ''}
+             <span class="fr-time${showActual ? ` ${timeTone}` : ''}">${showActual ? actual : sched}</span>
+             ${delay ? `<span class="delay-tag ${timeTone}">${delay}</span>` : ''}
+           </div>`,
+        // An arrival reads origin -> time ("from Bogota, landing 02:22"); a
+        // departure reads time -> destination. Same arrow, opposite order.
+        ][isArrival ? 'slice' : 'reverse']().join('')}
       </div>
       <div class="fr-footer">
         ${dotCfg ? `<span class="status-dot ${dotCfg.color}${dotCfg.pulse ? ' pulse' : ''}" aria-hidden="true"></span>` : ''}
@@ -882,6 +1105,31 @@ function renderFlights(animate) {
       </div>`;
 
   updateSummary(state.flights, filtered);
+  if (state.tipo === 'L') paintCardProgress(flights);
+}
+
+// Draws the aircraft onto each arrival card's connector line. Runs after the
+// list is on screen and mutates in place, so a slow counterpart board never
+// delays the board itself.
+async function paintCardProgress(flights) {
+  const token = ++progressRun;
+  for (const flight of flights) {
+    const j = await loadJourney(flight, parseRoute(flight.RUTA0, flight.RUTA), true);
+    if (token !== progressRun) return;   // a newer render superseded this pass
+    if (!j) continue;
+
+    const id   = flight.IDDW_ITINERARIO || (flight.NRO_VUELO || '').trim();
+    const line = document.querySelector(`.fr-route-line[data-leg="${id}"]`);
+    if (!line || line.dataset.painted) continue;
+
+    const span = j.arriveAt - j.departAt;
+    const pct  = Math.max(0, Math.min(1, (Date.now() - j.departAt) / (span || 1))) * 100;
+    line.dataset.painted = '1';
+    line.classList.add('has-progress');
+    line.innerHTML =
+      `<div class="fr-progress-fill" style="width:${pct.toFixed(1)}%"></div>` +
+      `<div class="fr-progress-plane${j.estimated ? ' estimated' : ''}" style="left:${pct.toFixed(1)}%">${PLANE_SVG}</div>`;
+  }
 }
 
 function updateTabIndicator(activeTab) {
@@ -926,6 +1174,8 @@ async function fetchFlights({ isRefresh = false } = {}) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     state.flights = await res.json();
+    boardCache.clear();
+    journeyCache.clear();
     lastFetchAt = Date.now();
     renderFlights(!isRefresh);
 
