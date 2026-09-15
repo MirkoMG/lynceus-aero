@@ -42,11 +42,10 @@ const MESSAGES = {
     flights_one: '{n} vuelo', flights_other: '{n} vuelos',
     flightsOfTotal: '{shown} de {total} vuelos',
     delayedCount_one: '{n} demorado', delayedCount_other: '{n} demorados',
-    stops_one: '{n} esc.', stops_other: '{n} esc.',
     emptySearch: 'Sin resultados para esa búsqueda', emptyBoard: 'No hay vuelos para mostrar',
     loadError: 'No se pudieron cargar los vuelos', retry: 'Reintentar',
     gate: 'Puerta', gateShort: 'P.{n}',
-    fullRoute: 'Ruta completa', viewFullRoute: 'Ver ruta completa',
+    fullRoute: 'Ruta del avión',
     track: 'Ver en Flightradar24', share: 'Compartir',
     copied: 'Copiado ✓', copyFailed: 'No se pudo copiar',
     arrival: 'Llegada', departure: 'Salida',
@@ -80,11 +79,10 @@ const MESSAGES = {
     flights_one: '{n} flight', flights_other: '{n} flights',
     flightsOfTotal: '{shown} of {total} flights',
     delayedCount_one: '{n} delayed', delayedCount_other: '{n} delayed',
-    stops_one: '{n} stop', stops_other: '{n} stops',
     emptySearch: 'No results for that search', emptyBoard: 'No flights to show',
     loadError: "Couldn't load flights", retry: 'Retry',
     gate: 'Gate', gateShort: 'G.{n}',
-    fullRoute: 'Full route', viewFullRoute: 'View full route',
+    fullRoute: 'Aircraft route',
     track: 'View on Flightradar24', share: 'Share',
     copied: 'Copied ✓', copyFailed: "Couldn't copy",
     arrival: 'Arrival', departure: 'Departure',
@@ -118,11 +116,10 @@ const MESSAGES = {
     flights_one: '{n} voo', flights_other: '{n} voos',
     flightsOfTotal: '{shown} de {total} voos',
     delayedCount_one: '{n} atrasado', delayedCount_other: '{n} atrasados',
-    stops_one: '{n} esc.', stops_other: '{n} esc.',
     emptySearch: 'Nenhum resultado para essa busca', emptyBoard: 'Nenhum voo para mostrar',
     loadError: 'Não foi possível carregar os voos', retry: 'Tentar novamente',
     gate: 'Portão', gateShort: 'P.{n}',
-    fullRoute: 'Rota completa', viewFullRoute: 'Ver rota completa',
+    fullRoute: 'Rota da aeronave',
     track: 'Ver no Flightradar24', share: 'Compartilhar',
     copied: 'Copiado ✓', copyFailed: 'Não foi possível copiar',
     arrival: 'Chegada', departure: 'Partida',
@@ -546,18 +543,27 @@ function parseRoute(ruta0, ruta) {
   const stops = raw.split('|').map(s => s.trim()).filter(s => s && !/^\d+$/.test(s));
   if (stops.length <= 1) {
     const only = titleCase(stops[0] || '—');
-    return { label: only, origin: only, destination: only, stops: [], intermediateCount: 0 };
+    return { label: only, inboundFrom: only, outboundTo: only, stops: only === '—' ? [] : [only] };
   }
 
   const titled = stops.map(titleCase);
-  const intermediateCount = stops.length - 2; // excludes first and last
 
+  // RUTA0 is the aircraft's rotation, and it reads in opposite directions on the
+  // two boards. Verified against 35 flights cross-matched between boards:
+  //
+  //   departures  COCHABAMBA - ORURO - SUCRE - TARIJA   (17/17 go to the FIRST)
+  //               -> this flight goes to Cochabamba; the rest is the aircraft's
+  //                  later day, after everyone aboard has got off
+  //   arrivals    MADRID - BUENOS AIRES - SANTA CRUZ    (18/19 came from the LAST)
+  //               -> this flight came from Santa Cruz; Madrid was hours earlier
+  //
+  // So neither end is "the destination" on its own, and the stops in between are
+  // not layovers anyone travelling on this leg experiences.
   return {
     label: `${titled[0]} → ${titled[titled.length - 1]}`,
-    origin: titled[0],
-    destination: titled[titled.length - 1],
+    outboundTo: titled[0],
+    inboundFrom: titled[titled.length - 1],
     stops: titled,
-    intermediateCount: Math.max(0, intermediateCount),
   };
 }
 
@@ -620,10 +626,6 @@ async function copyText(text) {
     finally { ta.remove(); }
   }
 }
-
-// Rows whose full route is expanded, keyed by IDDW_ITINERARIO. Held outside the
-// DOM because renderFlights() rebuilds the list wholesale on every refresh.
-const openStops = new Set();
 
 // ── Modal ───────────────────────────────────────────────
 let lastFocusedEl = null;
@@ -809,10 +811,9 @@ function renderCard(flight) {
   // that means something for the board you are on: where an arrival is coming
   // from, where a departure is going. The sheet still lists the full chain.
   const isArrival   = state.tipo === 'L';
-  const endpoint    = isArrival ? route.origin : route.destination;
+  const endpoint    = isArrival ? route.inboundFrom : route.outboundTo;
   const flightNum   = (flight.NRO_VUELO || '').trim();
   const cardId      = flight.IDDW_ITINERARIO || flightNum;
-  const stopsOpen   = openStops.has(cardId);
   const pinned      = getPins().has(flightNum);
   const dotCfg      = STATUS_DOT[statusKey];
   const relTime     = relTimeLabel(flight, statusKey);
@@ -824,7 +825,7 @@ function renderCard(flight) {
     : `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>`;
 
   return `
-    <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}${stopsOpen ? ' stops-open' : ''}" role="listitem"
+    <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}" role="listitem"
       data-flight="${flightNum}" data-id="${cardId}" tabindex="0"
       aria-label="${t('cardLabel', { airline: meta.abbr, n: flightNum, dir: isArrival ? t('dirFrom') : t('dirTo'), place: endpoint, status: statusLabel || t('scheduled') })}">
       <div class="fr-head">
@@ -850,21 +851,8 @@ function renderCard(flight) {
         <div class="fr-dest-wrap">
           <span class="fr-dest-label">${isArrival ? t('routeFrom') : t('routeTo')}</span>
           <span class="fr-dest">${endpoint}</span>
-          ${route.intermediateCount > 0 ? `
-            <button class="stops-toggle" aria-expanded="${stopsOpen}" aria-label="${t('viewFullRoute')}">
-              <svg class="stops-chevron" viewBox="0 0 12 12" fill="none" width="10" height="10" aria-hidden="true">
-                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              ${plural('stops', route.intermediateCount)}
-            </button>` : ''}
         </div>
       </div>
-      ${route.intermediateCount > 0 ? `
-        <div class="route-detail">
-          <div class="route-detail-inner">
-            <p class="stops-list">${route.stops.join(' → ')}</p>
-          </div>
-        </div>` : ''}
       <div class="fr-footer">
         ${dotCfg ? `<span class="status-dot ${dotCfg.color}${dotCfg.pulse ? ' pulse' : ''}" aria-hidden="true"></span>` : ''}
         ${statusLabel ? `<span class="status-badge ${badgeClass}">${statusLabel}</span>` : ''}
@@ -1089,16 +1077,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetchFlights();
       scheduleRefresh();
       return;
-    }
-
-    const stopsBtn = e.target.closest('.stops-toggle');
-    if (stopsBtn) {
-      const row  = stopsBtn.closest('.flight-row');
-      const open = !openStops.has(row.dataset.id);
-      open ? openStops.add(row.dataset.id) : openStops.delete(row.dataset.id);
-      row.classList.toggle('stops-open', open);
-      stopsBtn.setAttribute('aria-expanded', String(open));
-      return; // don't fall through and open the sheet as well
     }
 
     const card = e.target.closest('.flight-row');

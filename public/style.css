@@ -774,55 +774,6 @@ img.fr-logo {
   white-space: nowrap;
 }
 
-/* ── Stops toggle + expandable detail ───────────────── */
-.stops-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  padding: 0.125rem 0.25rem;
-  cursor: pointer;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--text-3);
-  font-family: inherit;
-  flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-  transition: color 150ms var(--ease-out), transform 160ms var(--ease-out);
-}
-
-.stops-toggle:active { transform: scale(0.95); }
-
-@media (hover: hover) and (pointer: fine) {
-  .stops-toggle:hover { color: var(--text-2); }
-}
-
-.stops-chevron {
-  flex-shrink: 0;
-  transition: transform 220ms var(--ease-out);
-}
-
-.flight-row.stops-open .stops-chevron { transform: rotate(180deg); }
-
-.route-detail {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 220ms var(--ease-out);
-}
-
-.flight-row.stops-open .route-detail { grid-template-rows: 1fr; }
-
-.route-detail-inner { overflow: hidden; }
-
-.stops-list {
-  font-size: 0.75rem;
-  color: var(--text-2);
-  line-height: 1.5;
-  padding-top: 0.3125rem;
-}
-
-
 .pin-btn {
   flex-shrink: 0;
   background: none;

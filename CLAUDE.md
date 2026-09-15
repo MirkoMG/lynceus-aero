@@ -76,10 +76,18 @@ Key response fields:
 - `OBSERVACION_INGLES` — status in English, right-padded with spaces. Spacing and
   hyphenation are inconsistent (`PRE-BOARDING`, `PRE BOARDING`, `PREEMBARCANDO`),
   so `getStatus()` matches on a squashed form, longest key first
-- `RUTA0` / `RUTA` — the aircraft's full published rotation (pipe or `>>` separated).
-  It frequently neither starts nor ends at the airport being viewed, so the board
-  shows the origin on arrivals and the destination on departures rather than
-  first → last; the detail sheet lists the whole chain
+- `RUTA0` / `RUTA` — the aircraft's **rotation**, not this flight's itinerary, and it
+  reads in **opposite directions on the two boards**. Verified by cross-matching 35
+  flights between boards:
+  - **departures**: the FIRST stop is where this leg actually goes (17/17). The rest
+    is the aircraft's later day — e.g. La Paz→Cochabamba is a 45-minute nonstop, but
+    publishes as `COCHABAMBA - ORURO - SUCRE - TARIJA - TRINIDAD`
+  - **arrivals**: the LAST stop is where this leg came from (18/19). Earlier entries
+    are hours-old history — `MADRID - BUENOS AIRES - SANTA CRUZ` arriving La Paz
+    flew in from Santa Cruz, not Madrid
+
+  The intermediate stops are **not layovers** for anyone on this leg, so the board
+  shows one endpoint and no stop count. Never render `RUTA0` first → last.
 - `NRO_PUERTA` — gate number
 
 Airline logos: `https://fids.naabol.gob.bo/img/Aerolineas/{ID_EMPRESA}.png`
