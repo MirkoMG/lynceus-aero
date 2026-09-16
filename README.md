@@ -16,6 +16,7 @@ A mobile-first flight information display for Bolivian airports, built on top of
 - Available in Spanish, English and Brazilian Portuguese
 - Opens on the airport nearest you, resolved from your IP at the edge
 - Responsive from phone to desktop — the board becomes a card grid on wide screens
+- Split-flap board view — the same data as a mechanical Solari departure board
 - Light and dark theme
 - Auto-refreshes every 60 seconds (and on reconnect / returning to the tab)
 
@@ -64,6 +65,11 @@ GET https://fids.naabol.gob.bo/Fids/itin/vuelos?aero={airport}&tipo={L|S}
 
 Airport coordinates come from the [OurAirports](https://ourairports.com/data/)
 public dataset.
+
+The split-flap view follows the approach in
+[Subway-Split-Flap-Solari](https://github.com/DavidTropiansky/Subway-Split-Flap-Solari)
+and Pete Butler's original — per-tile drums that only ever advance forward, and a
+row-by-row stagger. The tiles here are drawn in CSS rather than from a sprite sheet.
 
 Icons are [Lucide](https://lucide.dev) (ISC). Type is
 [IBM Plex](https://github.com/IBM/plex) (SIL OFL 1.1), self-hosted from

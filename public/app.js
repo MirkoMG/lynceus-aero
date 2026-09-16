@@ -22,6 +22,8 @@ const ICONS = {
   refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
   plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
   alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  list: '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>',
+  layoutGrid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   searchX: '<path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
 };
 
@@ -75,7 +77,9 @@ const MESSAGES = {
     loadError: 'No se pudieron cargar los vuelos', retry: 'Reintentar',
     gate: 'Puerta', gateShort: 'P.{n}',
     fullRoute: 'Ruta del avión',
-    youAreHere: 'aquí', journeyApprox: 'estimado', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
+    youAreHere: 'aquí', journeyApprox: 'estimado',
+    col_time: 'hora', col_flight: 'vuelo', col_place: 'ciudad', col_gate: 'puerta', col_status: 'estado',
+    viewList: 'Ver como lista', viewBoard: 'Ver como tablero', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
     journeyOnWay: 'En el aire', journeyBefore: 'Por salir', journeyDone: 'Completado',
     track: 'Ver en Flightradar24', share: 'Compartir',
     copied: 'Copiado ✓', copyFailed: 'No se pudo copiar',
@@ -114,7 +118,9 @@ const MESSAGES = {
     loadError: "Couldn't load flights", retry: 'Retry',
     gate: 'Gate', gateShort: 'G.{n}',
     fullRoute: 'Aircraft route',
-    youAreHere: 'here', journeyApprox: 'estimated', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
+    youAreHere: 'here', journeyApprox: 'estimated',
+    col_time: 'time', col_flight: 'flight', col_place: 'city', col_gate: 'gate', col_status: 'status',
+    viewList: 'View as list', viewBoard: 'View as board', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
     journeyOnWay: 'In the air', journeyBefore: 'Not departed', journeyDone: 'Completed',
     track: 'View on Flightradar24', share: 'Share',
     copied: 'Copied ✓', copyFailed: "Couldn't copy",
@@ -153,7 +159,10 @@ const MESSAGES = {
     loadError: 'Não foi possível carregar os voos', retry: 'Tentar novamente',
     gate: 'Portão', gateShort: 'P.{n}',
     fullRoute: 'Rota da aeronave',
-    youAreHere: 'aqui', journeyApprox: 'estimado', thisFlight: 'Este voo', earlierToday: 'Antes, a mesma aeronave', laterToday: 'Depois, a mesma aeronave',
+    youAreHere: 'aqui', journeyApprox: 'estimado',
+    col_time: 'hora', col_flight: 'voo', col_place: 'cidade', col_gate: 'portao', col_status: 'estado',
+    viewList: 'Ver como lista', viewBoard: 'Ver como painel',
+    thisFlight: 'Este voo', earlierToday: 'Antes, a mesma aeronave', laterToday: 'Depois, a mesma aeronave',
     journeyOnWay: 'No ar', journeyBefore: 'A partir', journeyDone: 'Concluído',
     track: 'Ver no Flightradar24', share: 'Compartilhar',
     copied: 'Copiado ✓', copyFailed: 'Não foi possível copiar',
@@ -549,6 +558,10 @@ const SORT_MODES = ['time', 'delayed', 'airline'];
 function readURLState() {
   const p = new URLSearchParams(window.location.search);
   const sort  = p.get('sort');
+  let view = p.get('view');
+  if (view !== 'board' && view !== 'list') {
+    try { view = localStorage.getItem(VIEW_KEY); } catch { view = null; }
+  }
   // A link's ?aero= wins, then a previously picked airport. Only when there is
   // neither is the visitor new enough for geolocation to be the right guess.
   const aero  = validAero(p.get('aero'));
@@ -558,6 +571,7 @@ function readURLState() {
     airportExplicit: Boolean(aero || saved),
     tipo:    p.get('tipo') === 'S' ? 'S' : 'L',
     sort:    SORT_MODES.includes(sort) ? sort : 'time',
+    view:    view === 'board' ? 'board' : 'list',
     search:  p.get('q') || '',
   };
 }
@@ -567,6 +581,7 @@ function writeURLState() {
   if (state.sort !== 'time') p.set('sort', state.sort);
   if (state.search.trim())   p.set('q', state.search.trim());
   if (locale !== FALLBACK)   p.set('lang', locale);
+  if (state.view === 'board') p.set('view', 'board');
   history.replaceState(null, '', `?${p}`);
 }
 
@@ -1108,7 +1123,145 @@ function renderCard(flight) {
   `;
 }
 
+
+// ── Split-flap board ────────────────────────────────────
+// A Solari board only ever carried capitals, digits and a little punctuation,
+// so text is folded to that set — accents included, which is why Potosí reads
+// POTOSI here and nowhere else in the app.
+const FLAP_CHARS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-/';
+const VIEW_KEY   = 'lynceus_view';
+
+// Column widths in characters. Anything longer is truncated, anything shorter
+// padded, because a real board has a fixed number of flaps per column.
+const BOARD_COLS = [
+  { key: 'time',   width: 5,  label: 'hora'    },
+  { key: 'flight', width: 7,  label: 'vuelo'   },
+  { key: 'place',  width: 14, label: 'ciudad'  },
+  { key: 'gate',   width: 4,  label: 'gate'    },
+  { key: 'status', width: 12, label: 'estado'  },
+];
+
+function flapText(str, width) {
+  const folded = (str || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toUpperCase()
+    .split('')
+    .map(c => (FLAP_CHARS.includes(c) ? c : ' '))
+    .join('');
+  return folded.slice(0, width).padEnd(width, ' ');
+}
+
+function boardRowValues(flight) {
+  const { key: statusKey, label: statusLabel } = getStatus(flight);
+  const route     = parseRoute(flight.RUTA0, flight.RUTA);
+  const isArrival = state.tipo === 'L';
+  const meta      = getAirlineMeta(flight.NOMBRE_AEROLINEA);
+  const showReal  = TIME_MOVED_KEYS.has(statusKey) && (flight.HORA_REAL || '').trim();
+  return {
+    time:   showReal ? flight.HORA_REAL.trim() : (flight.HORA_ESTIMADA || '').trim(),
+    flight: `${meta.iata || meta.abbr} ${(flight.NRO_VUELO || '').trim()}`,
+    place:  isArrival ? route.inboundFrom : route.outboundTo,
+    gate:   (flight.NRO_PUERTA || '').trim(),
+    status: statusLabel,
+    statusKey,
+  };
+}
+
+// Cycling the glyph is what sells a split-flap: the tile runs forward through
+// the drum to its target rather than cutting straight to it, because a real
+// flap cannot reverse.
+//
+// Two things have to be tracked per tile. The settled value lives in dataset.v,
+// not in textContent, so a re-render mid-flip compares against where the tile
+// is *going* rather than whichever glyph it happens to be showing. And the
+// running timers are held so a new value cancels the old animation — without
+// that, two intervals interleave on one tile and it sticks partway down the
+// drum.
+const flapTimers = new WeakMap();
+
+function stopFlap(tile) {
+  const running = flapTimers.get(tile);
+  if (!running) return;
+  clearTimeout(running.start);
+  clearInterval(running.tick);
+  flapTimers.delete(tile);
+}
+
+function flipTile(tile, target, delay) {
+  stopFlap(tile);
+  const from = FLAP_CHARS.indexOf(tile.dataset.v ?? ' ');
+  const to   = FLAP_CHARS.indexOf(target);
+  tile.dataset.v = target;
+
+  if (to < 0 || from === to ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    tile.textContent = target;
+    return;
+  }
+
+  let i = from < 0 ? 0 : from;
+  const steps = (to - i + FLAP_CHARS.length) % FLAP_CHARS.length;
+  let n = 0;
+  const start = setTimeout(() => {
+    const tick = setInterval(() => {
+      i = (i + 1) % FLAP_CHARS.length;
+      tile.textContent = FLAP_CHARS[i];
+      tile.classList.remove('flipping');
+      void tile.offsetWidth;
+      tile.classList.add('flipping');
+      if (++n >= steps) {
+        clearInterval(tick);
+        tile.textContent = target;
+      }
+    }, 38);
+    flapTimers.set(tile, { tick });
+  }, delay);
+  flapTimers.set(tile, { start });
+}
+
+function renderBoard(flights) {
+  const host = document.getElementById('flights-list');
+  const head = BOARD_COLS.map(c =>
+    `<div class="flap-head" style="--w:${c.width}">${t('col_' + c.key)}</div>`).join('');
+
+  const existing = host.querySelector('.flap-board');
+  const rows = flights.slice(0, 18);
+
+  if (!existing || existing.dataset.rows !== String(rows.length)) {
+    host.innerHTML = `
+      <div class="flap-board" data-rows="${rows.length}">
+        <div class="flap-row flap-header">${head}</div>
+        ${rows.map(() => `<div class="flap-row">${
+          BOARD_COLS.map(c => `<div class="flap-cell" style="--w:${c.width}">${
+            Array.from({ length: c.width }, () => '<span class="flap-tile"> </span>').join('')
+          }</div>`).join('')
+        }</div>`).join('')}
+      </div>`;
+  }
+
+  const rowEls = [...host.querySelectorAll('.flap-row:not(.flap-header)')];
+  rows.forEach((flight, r) => {
+    const values = boardRowValues(flight);
+    const cells  = [...rowEls[r].children];
+    rowEls[r].dataset.status = values.statusKey;
+    BOARD_COLS.forEach((col, c) => {
+      const text  = flapText(values[col.key], col.width);
+      const tiles = [...cells[c].children];
+      tiles.forEach((tile, i) => {
+        if ((tile.dataset.v ?? ' ') !== text[i]) flipTile(tile, text[i], r * 90 + (c * 55 + i * 25));
+      });
+    });
+  });
+}
+
 function renderFlights(animate) {
+  if (state.view === 'board') {
+    const filtered = filterFlights(state.flights);
+    renderBoard(sortFlights(filtered, state.sort));
+    updateSummary(state.flights, filtered);
+    return;
+  }
+
   const list     = document.getElementById('flights-list');
   const filtered = filterFlights(state.flights);
   const flights  = sortFlights(filtered, state.sort);
@@ -1166,6 +1319,7 @@ const state = {
   airportExplicit: initURL.airportExplicit,
   tipo:    initURL.tipo,
   sort:    initURL.sort,
+  view:    initURL.view,
   search:  initURL.search,
   flights: [],
   loading: false,
@@ -1235,6 +1389,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   const searchBar     = document.getElementById('search-bar');
 
   applyStaticStrings();
+
+  const viewBtn = document.getElementById('view-btn');
+  const syncViewBtn = () => {
+    viewBtn.innerHTML = icon(state.view === 'board' ? 'list' : 'layoutGrid', 15);
+    viewBtn.setAttribute('aria-label', t(state.view === 'board' ? 'viewList' : 'viewBoard'));
+    viewBtn.setAttribute('aria-pressed', String(state.view === 'board'));
+    document.body.classList.toggle('view-board', state.view === 'board');
+  };
+  syncViewBtn();
+  viewBtn.addEventListener('click', () => {
+    state.view = state.view === 'board' ? 'list' : 'board';
+    try { localStorage.setItem(VIEW_KEY, state.view); } catch { /* private mode */ }
+    syncViewBtn();
+    writeURLState();
+    document.getElementById('flights-list').innerHTML = '';
+    renderFlights(true);
+  });
 
   const langSelect = document.getElementById('lang-select');
   langSelect.value = locale;
