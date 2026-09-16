@@ -1,5 +1,6 @@
-const CACHE = 'lynceus-v1';
-const PRECACHE = ['/', '/style.css', '/app.js', '/icon.svg', '/manifest.webmanifest'];
+const CACHE = 'lynceus-v2';
+const PRECACHE = ['/', '/style.css', '/app.js', '/icon.svg', '/manifest.webmanifest',
+  '/fonts/plex-sans-var.woff2', '/fonts/plex-mono-600.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)));

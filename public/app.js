@@ -3,8 +3,37 @@ const PINS_KEY    = 'lynceus_pins';
 const AIRPORT_KEY = 'lynceus_airport';
 const THEME_KEY   = 'lynceus_theme';
 
-const ICON_MOON = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const ICON_SUN  = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+// ── Icons ───────────────────────────────────────────────
+// Lucide v1.46 (ISC). One 24px grid, one 2px stroke, round caps and joins —
+// the previous set was hand-drawn across six different stroke widths, which is
+// why it never read as a family. Geometry is copied verbatim, not redrawn.
+const ICONS = {
+  search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  bookmark: '<path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/>',
+  moon: '<path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  planeLanding: '<path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/>',
+  planeTakeoff: '<path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/>',
+  wifiOff: '<path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/>',
+  arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+  radio: '<path d="M16.247 7.761a6 6 0 0 1 0 8.478"/><path d="M19.075 4.933a10 10 0 0 1 0 14.134"/><path d="M4.925 19.067a10 10 0 0 1 0-14.134"/><path d="M7.753 16.239a6 6 0 0 1 0-8.478"/><circle cx="12" cy="12" r="2"/>',
+  refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  searchX: '<path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+};
+
+function icon(name, size = 16, opts = {}) {
+  const { fill = 'none', cls = '' } = opts;
+  return `<svg class="icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" width="${size}" height="${size}" `
+    + `fill="${fill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" `
+    + `stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+}
+
+const ICON_MOON = icon('moon', 15);
+const ICON_SUN  = icon('sun', 15);
 
 // ── i18n ────────────────────────────────────────────────
 // Bolivia's boards serve a lot of non-Spanish traffic — GOL and Copa routes,
@@ -407,7 +436,7 @@ const journeyCache = new Map();
 const boardCache   = new Map();
 let   progressRun  = 0;
 
-const PLANE_SVG = `<svg viewBox="0 0 24 24" width="16" height="16"><path d="M21 15.5v-1.8l-7.2-4.5V3.5a1.3 1.3 0 1 0-2.6 0v5.7L4 13.7v1.8l7.2-2.25V18l-1.8 1.35V21l3.15-.9 3.15.9v-1.65L13.8 18v-5.25L21 15.5z" fill="currentColor" transform="rotate(90 12 12)"/></svg>`;
+const PLANE_SVG = icon('plane', 20);
 
 // Every arrival from La Paz wants the same El Alto departures board, so cache the
 // promise rather than the result — 20 cards resolve from one request.
@@ -870,16 +899,11 @@ function openModal(flight) {
     <div class="modal-actions">
       ${fr24Url ? `
         <a class="modal-action" href="${fr24Url}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="2" fill="currentColor"/>
-            <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 16.24a6 6 0 0 1 0-8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-          </svg>
+          ${icon('radio', 16)}
           ${t('track')}
         </a>` : ''}
       <button class="modal-action" id="modal-share">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
-          <path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        ${icon('share', 16)}
         ${t('share')}
       </button>
     </div>
@@ -923,7 +947,7 @@ function openModal(flight) {
         <div class="journey-track">
           <div class="journey-fill" style="width:${(pct * 100).toFixed(1)}%"></div>
           <div class="journey-plane" style="left:${(pct * 100).toFixed(1)}%" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="19" height="19"><path d="M21 15.5v-1.8l-7.2-4.5V3.5a1.3 1.3 0 1 0-2.6 0v5.7L4 13.7v1.8l7.2-2.25V18l-1.8 1.35V21l3.15-.9 3.15.9v-1.65L13.8 18v-5.25L21 15.5z" fill="currentColor" transform="rotate(90 12 12)"/></svg>
+            ${icon('plane', 22)}
           </div>
         </div>
         <div class="journey-end">
@@ -1035,9 +1059,7 @@ function renderCard(flight) {
 
   const badgeClass = BADGE_KEYS.has(statusKey) ? statusKey : 'scheduled';
 
-  const pinIcon = pinned
-    ? `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" fill="currentColor"/></svg>`
-    : `<svg viewBox="0 0 14 16" width="12" height="13" aria-hidden="true"><path d="M2 1h10v14L7 11.5 2 15V1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>`;
+  const pinIcon = icon('bookmark', 15, pinned ? { fill: 'currentColor' } : {});
 
   return `
     <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}" role="listitem"
@@ -1096,11 +1118,7 @@ function renderFlights(animate) {
   list.innerHTML = flights.length
     ? flights.map(renderCard).join('')
     : `<div class="state-empty">
-        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" aria-hidden="true">
-          ${state.search
-            ? '<circle cx="10.5" cy="10.5" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>'
-            : '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'}
-        </svg>
+        ${icon(state.search ? 'searchX' : 'plane', 34)}
         <p>${state.search ? t('emptySearch') : t('emptyBoard')}</p>
       </div>`;
 
@@ -1187,9 +1205,7 @@ async function fetchFlights({ isRefresh = false } = {}) {
     if (!isRefresh) {
       list.innerHTML = `
         <div class="state-empty">
-          <svg viewBox="0 0 24 24" width="36" height="36" fill="none" aria-hidden="true">
-            <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          ${icon('alert', 34)}
           <p>${t('loadError')}</p>
           <button class="retry-btn" type="button">${t('retry')}</button>
         </div>`;

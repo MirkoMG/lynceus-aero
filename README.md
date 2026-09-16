@@ -65,4 +65,8 @@ GET https://fids.naabol.gob.bo/Fids/itin/vuelos?aero={airport}&tipo={L|S}
 Airport coordinates come from the [OurAirports](https://ourairports.com/data/)
 public dataset.
 
+Icons are [Lucide](https://lucide.dev) (ISC). Type is
+[IBM Plex](https://github.com/IBM/plex) (SIL OFL 1.1), self-hosted from
+`public/fonts/`.
+
 Co-authored with [Claude](https://claude.ai/code).

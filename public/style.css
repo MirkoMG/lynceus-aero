@@ -1,3 +1,26 @@
+/* ── Type ────────────────────────────────────────────────
+   IBM Plex: drawn for technical and industrial contexts, which is what a
+   departure board is. Sans is the variable file, so 400-700 costs one 39 KB
+   download; Mono carries the clock times, because fixed pitch is how every
+   physical flight board has always set them and it keeps the digits in a true
+   column as they tick over. Self-hosted rather than linked, so the PWA still
+   has its typeface offline. */
+@font-face {
+  font-family: 'Plex Sans';
+  src: url('fonts/plex-sans-var.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2191, U+2193, U+2212;
+}
+
+@font-face {
+  font-family: 'Plex Mono';
+  src: url('fonts/plex-mono-600.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+2000-206F;
+}
+
 /* ── Light theme (default) ───────────────────────────── */
 :root {
   --bg:        #e4e5f0;
@@ -7,20 +30,29 @@
   --border-2:  #cccce0;
 
   --text:   #0d0d1a;
-  --text-2: #60607a;
-  --text-3: #b0b0c8;
+  --text-2: #5a5a73;
+  --text-3: #797194;
 
-  --green:     #16a34a;
-  --green-dim: rgba(22, 163, 74, 0.10);
-  --red:       #dc2626;
-  --red-dim:   rgba(220, 38, 38, 0.10);
-  --red-tint:  rgba(220, 38, 38, 0.04);
-  --blue:      #2563eb;
-  --blue-dim:  rgba(37, 99, 235, 0.10);
-  --amber:     #b45309;
-  --amber-dim: rgba(180, 83, 9, 0.10);
-  --purple:    #7c3aed;
-  --purple-dim:rgba(124, 58, 237, 0.10);
+  /* Status colours follow airfield ground lighting, which already has a
+     standard vocabulary for exactly these states: threshold green, taxiway
+     blue, caution amber, stop-bar red. Each value is the darkest step that
+     still clears 4.5:1 against its own 10% tint — the previous Tailwind
+     defaults failed AA on four of five badges in this theme. */
+  --green:     #097b3e;
+  --green-dim: rgba(9, 123, 62, 0.10);
+  --red:       #ce1c34;
+  --red-dim:   rgba(206, 28, 52, 0.10);
+  --red-tint:  rgba(206, 28, 52, 0.04);
+  --blue:      #1568d5;
+  --blue-dim:  rgba(21, 104, 213, 0.10);
+  --amber:     #9e5905;
+  --amber-dim: rgba(158, 89, 5, 0.10);
+  /* Brand accent, never a status — so a countdown chip never reads as a state.
+     Teal sits 31 degrees off the taxiway blue, far enough to stay distinct from
+     the Boarding badge while still reading as instrumentation rather than as
+     one of the four signal colours. */
+  --accent:     #0a7480;
+  --accent-dim: rgba(10, 116, 128, 0.10);
 
   --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
@@ -38,20 +70,20 @@ html[data-theme="dark"] {
   --border-2:  #2c2c3e;
 
   --text:   #eeeef8;
-  --text-2: #8888a8;
-  --text-3: #454560;
+  --text-2: #9a9abb;
+  --text-3: #7c7c99;
 
-  --green:     #22c55e;
-  --green-dim: rgba(34, 197, 94, 0.12);
-  --red:       #f87171;
-  --red-dim:   rgba(248, 113, 113, 0.12);
-  --red-tint:  rgba(248, 113, 113, 0.05);
-  --blue:      #60a5fa;
-  --blue-dim:  rgba(96, 165, 250, 0.12);
-  --amber:     #fbbf24;
-  --amber-dim: rgba(251, 191, 36, 0.12);
-  --purple:    #a78bfa;
-  --purple-dim:rgba(167, 139, 250, 0.12);
+  --green:     #35d98a;
+  --green-dim: rgba(53, 217, 138, 0.12);
+  --red:       #ea6678;
+  --red-dim:   rgba(234, 102, 120, 0.12);
+  --red-tint:  rgba(234, 102, 120, 0.05);
+  --blue:      #4f94ee;
+  --blue-dim:  rgba(79, 148, 238, 0.12);
+  --amber:     #f2a03c;
+  --amber-dim: rgba(242, 160, 60, 0.12);
+  --accent:     #45bcca;
+  --accent-dim: rgba(69, 188, 202, 0.12);
 }
 
 *, *::before, *::after {
@@ -64,7 +96,8 @@ html {
   background: var(--bg);
   color: var(--text);
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04';
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -81,7 +114,7 @@ button, select, input, a, .flight-row {
 }
 
 :where(button, select, a, [tabindex]):focus-visible {
-  outline: 2px solid var(--purple);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -114,7 +147,7 @@ body {
   transition: opacity 180ms var(--ease-out), transform 220ms var(--ease-out);
 }
 
-.ptr.ready { color: var(--purple); }
+.ptr.ready { color: var(--accent); }
 
 .ptr.refreshing svg { animation: ptr-spin 700ms linear infinite; }
 
@@ -146,7 +179,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .brand-icon {
   width: 20px;
   height: 20px;
-  color: var(--purple);
+  color: var(--accent);
   flex-shrink: 0;
 }
 
@@ -158,7 +191,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 }
 
 .brand-aero {
-  color: var(--purple);
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -195,6 +228,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 }
 
 .last-updated {
+  font-family: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.6875rem;
   color: var(--text-3);
   font-variant-numeric: tabular-nums;
@@ -280,8 +314,8 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .airport-select:focus {
   outline: none;
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px var(--purple-dim);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 /* ── Tabs ────────────────────────────────────────────── */
@@ -314,7 +348,13 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   -webkit-tap-highlight-color: transparent;
 }
 
-.tab-emoji { font-size: 0.9375rem; line-height: 1; flex-shrink: 0; }
+.tab-icon {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 150ms var(--ease-out);
+}
+
+.tab.active .tab-icon { opacity: 1; }
 .tab.active { color: var(--text); }
 .tab:active { transform: scale(0.97); }
 
@@ -369,8 +409,8 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .search-input::-webkit-search-cancel-button { display: none; }
 
 .search-input:focus {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px var(--purple-dim);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
   background: var(--surface);
 }
 
@@ -512,16 +552,16 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .flight-row.status-info {
   box-shadow: inset 3px 0 0 var(--red);
   background: linear-gradient(90deg, var(--red-tint) 0%, var(--surface) 55%);
-  border-color: rgba(220, 38, 38, 0.2);
+  border-color: rgba(206, 28, 52, 0.22);
 }
 
 .flight-row.status-retimed {
   box-shadow: inset 3px 0 0 var(--amber);
-  border-color: rgba(180, 83, 9, 0.2);
+  border-color: rgba(158, 89, 5, 0.22);
 }
 
 .flight-row.is-pinned:not(.status-delayed):not(.status-info) {
-  box-shadow: inset 3px 0 0 var(--purple);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -532,12 +572,12 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   }
   .flight-row.status-delayed:hover,
   .flight-row.status-info:hover {
-    box-shadow: inset 3px 0 0 var(--red), 0 2px 8px rgba(220, 38, 38, 0.08);
-    border-color: rgba(220, 38, 38, 0.3);
+    box-shadow: inset 3px 0 0 var(--red), 0 2px 8px rgba(206, 28, 52, 0.09);
+    border-color: rgba(206, 28, 52, 0.32);
     transform: translateY(-1px);
   }
   .flight-row.is-pinned:not(.status-delayed):not(.status-info):hover {
-    box-shadow: inset 3px 0 0 var(--purple), 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: inset 3px 0 0 var(--accent), 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 }
 
@@ -601,6 +641,7 @@ img.fr-logo {
 }
 
 .fr-time-old {
+  font-family: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--text-3);
@@ -610,6 +651,7 @@ img.fr-logo {
 }
 
 .fr-time {
+  font-family: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -637,6 +679,7 @@ img.fr-logo {
 
 .fr-route-line {
   flex: 1;
+  margin: 0 0.4rem;
   height: 1px;
   background: var(--border-2);
   position: relative;
@@ -650,15 +693,15 @@ img.fr-logo {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: 1px;
-  background: var(--purple);
+  background: var(--accent);
 }
 
 .fr-progress-plane {
   position: absolute;
   top: 50%;
-  color: var(--purple);
+  color: var(--accent);
   line-height: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .fr-progress-plane.estimated { opacity: 0.55; }
@@ -797,8 +840,8 @@ img.fr-logo {
   border-radius: 9999px;
   font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--purple);
-  background: var(--purple-dim);
+  color: var(--accent);
+  background: var(--accent-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -828,6 +871,7 @@ img.fr-logo {
 }
 
 .journey-time {
+  font-family: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.75rem;
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
@@ -845,16 +889,16 @@ img.fr-logo {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: 2px;
-  background: var(--purple);
+  background: var(--accent);
   transition: width 400ms var(--ease-out);
 }
 
 .journey-plane {
   position: absolute;
   top: 50%;
-  color: var(--purple);
+  color: var(--accent);
   line-height: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(45deg);
   transition: left 400ms var(--ease-out);
 }
 
@@ -872,12 +916,12 @@ img.fr-logo {
   -webkit-tap-highlight-color: transparent;
 }
 
-.pin-btn.pinned { color: var(--purple); }
+.pin-btn.pinned { color: var(--accent); }
 .pin-btn:active { transform: scale(0.82); }
 
 @media (hover: hover) and (pointer: fine) {
   .pin-btn:hover       { color: var(--text-2); }
-  .pin-btn.pinned:hover { color: var(--purple); }
+  .pin-btn.pinned:hover { color: var(--accent); }
 }
 
 /* ── Airline chips (CSS classes, theme-aware) ────────── */
@@ -1078,6 +1122,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 }
 
 .modal-time {
+  font-family: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 1.5rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1170,7 +1215,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 }
 
 /* the one hop that is actually this flight */
-.route-stop-line.on-leg::before { background: var(--purple); }
+.route-stop-line.on-leg::before { background: var(--accent); }
 
 
 /* ── Empty / Loading ─────────────────────────────────── */
@@ -1192,7 +1237,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   padding: 0.5rem 1.25rem;
   border-radius: 9999px;
   border: none;
-  background: var(--purple);
+  background: var(--accent);
   color: #fff;
   font-size: 0.8125rem;
   font-weight: 600;

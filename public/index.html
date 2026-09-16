@@ -21,21 +21,20 @@
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
     );
   </script>
+  <link rel="preload" href="fonts/plex-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/plex-mono-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="ptr" id="ptr" aria-hidden="true">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
-      <path d="M21 12a9 9 0 1 1-2.64-6.36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-      <path d="M21 3v4h-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
   </div>
 
   <header class="header">
     <div class="header-brand">
       <svg class="brand-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M21 15.5v-1.8l-7.2-4.5V3.5a1.3 1.3 0 1 0-2.6 0v5.7L4 13.7v1.8l7.2-2.25V18l-1.8 1.35V21l3.15-.9 3.15.9v-1.65L13.8 18v-5.25L21 15.5z" fill="currentColor"/>
-        <line x1="3" y1="21" x2="21" y2="21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="3" y1="21" x2="21" y2="21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
       <span class="brand-name" translate="no">Lynceus <span class="brand-aero">Aero</span></span>
     </div>
@@ -75,11 +74,11 @@
 
   <div class="tabs" role="tablist">
     <button class="tab active" data-tipo="L" role="tab" aria-selected="true">
-      <span class="tab-emoji" aria-hidden="true">🛬</span>
+      <svg class="icon tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 22h20"/><path d="M3.77 10.77 2 9l2-4.5 1.1.55c.55.28.9.84.9 1.45s.35 1.17.9 1.45L8 8.5l3-6 1.05.53a2 2 0 0 1 1.09 1.52l.72 5.4a2 2 0 0 0 1.09 1.52l4.4 2.2c.42.22.78.55 1.01.96l.6 1.03c.49.88-.06 1.98-1.06 2.1l-1.18.15c-.47.06-.95-.02-1.37-.24L4.29 11.15a2 2 0 0 1-.52-.38Z"/></svg>
       <span data-i18n="arrivals">Llegadas</span>
     </button>
     <button class="tab" data-tipo="S" role="tab" aria-selected="false">
-      <span class="tab-emoji" aria-hidden="true">🛫</span>
+      <svg class="icon tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg>
       <span data-i18n="departures">Salidas</span>
     </button>
     <div class="tab-indicator" aria-hidden="true"></div>
@@ -87,15 +86,10 @@
 
   <div class="search-bar" id="search-bar">
     <div class="search-wrap">
-      <svg class="search-icon" viewBox="0 0 20 20" width="15" height="15" fill="none" aria-hidden="true">
-        <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.75"/>
-        <path d="M13 13l4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-      </svg>
+      <svg class="icon search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
       <input class="search-input" id="search-input" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="Vuelo, destino o aerolínea…" autocomplete="off" autocorrect="off" spellcheck="false">
       <button class="search-clear" id="search-clear" data-i18n-aria="clearSearch" aria-label="Limpiar búsqueda" tabindex="-1">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
-          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-        </svg>
+        <svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
     </div>
   </div>
@@ -112,25 +106,19 @@
   </main>
 
   <div class="offline-banner" id="offline-banner" hidden>
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
-      <path d="M1 1l22 22M9 9a10 10 0 0 0-4 2.5M1.5 7A15 15 0 0 1 8 3.5m8 0A15 15 0 0 1 22.5 7M12 20h.01M8.5 16.5a5 5 0 0 1 5.5-1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-    </svg>
+    <svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg>
     <span data-i18n="offline">Sin conexión</span>
   </div>
 
   <button class="scroll-top" id="scroll-top" data-i18n-aria="scrollTop" aria-label="Volver arriba" hidden>
-    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
-      <path d="M3 10l5-5 5 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
   </button>
 
   <div class="modal-overlay" id="modal-overlay" hidden>
     <div class="modal-sheet" id="modal-sheet" role="dialog" aria-modal="true">
       <div class="modal-handle" aria-hidden="true"></div>
       <button class="modal-close" id="modal-close" data-i18n-aria="close" aria-label="Cerrar">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
-          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-        </svg>
+        <svg class="icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div id="modal-content"></div>
     </div>
