@@ -1131,15 +1131,42 @@ function renderCard(flight) {
 const FLAP_CHARS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:.-/';
 const VIEW_KEY   = 'lynceus_view';
 
-// Column widths in characters. Anything longer is truncated, anything shorter
-// padded, because a real board has a fixed number of flaps per column.
-const BOARD_COLS = [
-  { key: 'time',   width: 5,  label: 'hora'    },
-  { key: 'flight', width: 7,  label: 'vuelo'   },
-  { key: 'place',  width: 14, label: 'ciudad'  },
-  { key: 'gate',   width: 4,  label: 'gate'    },
-  { key: 'status', width: 12, label: 'estado'  },
+// Column widths in characters — a real board has a fixed number of flaps per
+// column, so text is truncated or padded to fit.
+//
+// The full board is 42 characters wide, which cannot be shown legibly on a
+// phone: fitting it would put the tiles under 7px. So narrower screens drop
+// columns rather than shrink past readability. Gate goes first (it is often
+// empty anyway), then the flight number.
+const BOARD_LAYOUTS = [
+  { upTo: 560,      cols: [['time', 5], ['place', 11], ['status', 9]] },
+  { upTo: 900,      cols: [['time', 5], ['flight', 7], ['place', 12], ['status', 10]] },
+  { upTo: Infinity, cols: [['time', 5], ['flight', 7], ['place', 14], ['gate', 4], ['status', 12]] },
 ];
+
+function boardColumns() {
+  const w = document.documentElement.clientWidth;
+  const layout = BOARD_LAYOUTS.find(l => w <= l.upTo) ?? BOARD_LAYOUTS[BOARD_LAYOUTS.length - 1];
+  return layout.cols.map(([key, width]) => ({ key, width }));
+}
+
+// Tile size is solved from the space actually available rather than guessed with
+// clamp(), so the board always lands exactly inside its container and never
+// scrolls sideways.
+const TILE_GAP = 2;
+
+function fitBoard(board, cols) {
+  const chars   = cols.reduce((n, c) => n + c.width, 0);
+  const colGap  = document.documentElement.clientWidth < 560 ? 7 : 16;
+  const style   = getComputedStyle(board);
+  const inner   = board.clientWidth
+    - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  const gaps    = (chars - cols.length) * TILE_GAP + (cols.length - 1) * colGap;
+  const tile    = Math.max(7, Math.floor((inner - gaps) / chars));
+  board.style.setProperty('--flap-w', `${tile}px`);
+  board.style.setProperty('--flap-h', `${Math.round(tile * 1.55)}px`);
+  board.style.setProperty('--flap-col-gap', `${colGap}px`);
+}
 
 function flapText(str, width) {
   const folded = (str || '')
@@ -1221,34 +1248,38 @@ function flipTile(tile, target, delay) {
 
 function renderBoard(flights) {
   const host = document.getElementById('flights-list');
-  const head = BOARD_COLS.map(c =>
+  const cols = boardColumns();
+  const head = cols.map(c =>
     `<div class="flap-head" style="--w:${c.width}">${t('col_' + c.key)}</div>`).join('');
 
   const existing = host.querySelector('.flap-board');
   const rows = flights.slice(0, 18);
+  const shape = `${rows.length}:${cols.map(c => c.key + c.width).join(',')}`;
 
-  if (!existing || existing.dataset.rows !== String(rows.length)) {
+  if (!existing || existing.dataset.shape !== shape) {
     host.innerHTML = `
-      <div class="flap-board" data-rows="${rows.length}">
+      <div class="flap-board" data-shape="${shape}">
         <div class="flap-row flap-header">${head}</div>
         ${rows.map(() => `<div class="flap-row">${
-          BOARD_COLS.map(c => `<div class="flap-cell" style="--w:${c.width}">${
+          cols.map(c => `<div class="flap-cell" style="--w:${c.width}">${
             Array.from({ length: c.width }, () => '<span class="flap-tile"> </span>').join('')
           }</div>`).join('')
         }</div>`).join('')}
       </div>`;
   }
 
+  fitBoard(host.querySelector('.flap-board'), cols);
+
   const rowEls = [...host.querySelectorAll('.flap-row:not(.flap-header)')];
   rows.forEach((flight, r) => {
     const values = boardRowValues(flight);
     const cells  = [...rowEls[r].children];
     rowEls[r].dataset.status = values.statusKey;
-    BOARD_COLS.forEach((col, c) => {
+    cols.forEach((col, c) => {
       const text  = flapText(values[col.key], col.width);
       const tiles = [...cells[c].children];
       tiles.forEach((tile, i) => {
-        if ((tile.dataset.v ?? ' ') !== text[i]) flipTile(tile, text[i], r * 90 + (c * 55 + i * 25));
+        if ((tile.dataset.v ?? ' ') !== text[i]) flipTile(tile, text[i], r * 52 + (c * 40 + i * 16));
       });
     });
   });
@@ -1648,6 +1679,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     resizeTimer = setTimeout(() => {
       const activeTab = document.querySelector('.tab.active');
       if (activeTab) updateTabIndicator(activeTab);
+      // The board solves its tile size from the container, so it has to be
+      // re-solved whenever that container changes width.
+      if (state.view === 'board') renderFlights(false);
     }, 120);
   });
 

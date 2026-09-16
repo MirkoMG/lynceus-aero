@@ -1409,36 +1409,38 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
    phosphor-free mechanical boards actually looked like. The flip keyframe
    pivots the top leaf down from that seam. */
 .flap-board {
-  --flap-w: clamp(13px, 3.1vw, 19px);
-  --flap-h: clamp(21px, 5vw, 30px);
+  --flap-w: 18px;         /* solved at runtime by fitBoard() */
+  --flap-h: 28px;
+  --flap-col-gap: 16px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: clamp(0.5rem, 2vw, 1rem);
+  gap: 6px;
+  padding: clamp(0.6rem, 2vw, 1.25rem);
+  width: 100%;
   background: #0a0a0c;
   border: 1px solid #23232b;
   border-radius: 12px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.6);
 }
 
 .flap-row {
   display: flex;
-  gap: clamp(8px, 2.4vw, 20px);
+  gap: var(--flap-col-gap);
   align-items: center;
-  width: max-content;
 }
 
 .flap-header {
-  font-size: 0.5625rem;
+  font-size: clamp(0.75rem, 1.6vw, 0.9375rem);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #6a6a58;
-  padding-bottom: 2px;
+  color: #d8c48a;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid #2c2c33;
 }
 
-.flap-head { width: calc(var(--w) * (var(--flap-w) + 2px)); }
+.flap-head { width: calc(var(--w) * var(--flap-w) + (var(--w) - 1) * 2px); }
 
 .flap-cell {
   display: flex;
