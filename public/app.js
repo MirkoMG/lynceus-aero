@@ -245,7 +245,8 @@ function applyStaticStrings() {
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem(THEME_KEY, theme);
-  document.getElementById('theme-color').setAttribute('content', theme === 'dark' ? '#0c0c11' : '#f5f5fa');
+  // The band is black in both themes, and it is what sits under the status bar
+  document.getElementById('theme-color').setAttribute('content', '#000000');
   const btn = document.getElementById('theme-btn');
   if (btn) {
     btn.innerHTML = theme === 'dark' ? ICON_SUN : ICON_MOON;
@@ -1592,10 +1593,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     searchBar.classList.add('has-query');
   }
 
-  requestAnimationFrame(() => {
+  const placeIndicator = () => {
     const activeTab = document.querySelector('.tab.active');
     if (activeTab) updateTabIndicator(activeTab);
-  });
+  };
+  requestAnimationFrame(placeIndicator);
+  // The indicator is sized from measured text, so it has to be re-measured once
+  // the webfont swaps in — otherwise it keeps the fallback font's width.
+  if (document.fonts?.ready) document.fonts.ready.then(placeIndicator);
 
   // Search
   searchInput.addEventListener('input', () => {

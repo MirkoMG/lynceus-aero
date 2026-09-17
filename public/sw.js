@@ -1,6 +1,6 @@
-const CACHE = 'lynceus-v3';
+const CACHE = 'lynceus-v4';
 const PRECACHE = ['/', '/style.css', '/app.js', '/icon.svg', '/manifest.webmanifest',
-  '/fonts/plex-sans-var.woff2', '/fonts/plex-mono-600.woff2',
+  '/fonts/inter-var.woff2', '/fonts/plex-mono-600.woff2',
   '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

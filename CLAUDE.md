@@ -34,6 +34,19 @@ server.js      — local dev Express proxy (not deployed)
 - **No framework** — intentional, keeps it fast and simple
 - **pnpm** — use pnpm, not npm
 - **Theme** — `html[data-theme]` attribute, set by inline script before CSS to prevent flash
+- **Design system** — monochrome transit-kiosk: white canvas, one grey surface
+  step (`--surface-2`), black structural bands (header, active tab, active sort
+  pill). Strictly flat — **no drop shadows anywhere**; depth is the surface
+  progression plus 1px hairlines. Radii are binary: `--r-card` (8px) for
+  surfaces and controls, `--r-pill` for toggles only. Type is Inter for the
+  interface, Plex Mono for clock times.
+
+  **The one colour exception:** flight state. Chrome, controls, labels and
+  numerals are achromatic; green/amber/red/blue appear only on status badges and
+  the status rail, and on a time that has actually moved. On a departure board
+  that is content, not decoration — stripping it would look right and read
+  badly. Do not add colour to buttons, tabs, links or headings.
+
 - **Animations** — Emil Kowalski principles: specific properties, `cubic-bezier(0.23, 1, 0.32, 1)`, `scale(0.97)` on active, hover only on `(hover: hover) and (pointer: fine)`
 - **Logos** — served from NAABOL's own CDN using `ID_EMPRESA` field from API response
 - **Card layout** — Skyscanner-inspired: airline header row, large time → route line → destination, status + gate footer; the whole card opens the detail sheet

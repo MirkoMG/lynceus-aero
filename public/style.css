@@ -6,8 +6,8 @@
    column as they tick over. Self-hosted rather than linked, so the PWA still
    has its typeface offline. */
 @font-face {
-  font-family: 'Plex Sans';
-  src: url('fonts/plex-sans-var.woff2') format('woff2-variations');
+  font-family: 'Inter';
+  src: url('fonts/inter-var.woff2') format('woff2-variations');
   font-weight: 400 700;
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+2191, U+2193, U+2212;
@@ -21,69 +21,78 @@
   unicode-range: U+0000-00FF, U+2000-206F;
 }
 
-/* ── Light theme (default) ───────────────────────────── */
+/* ── Light theme (default) ─────────────────────────────
+   Monochrome transit-kiosk system: a white canvas, one grey surface step, and
+   black structural bands. Every control, surface, border and label is
+   achromatic — the only colour in the interface encodes flight state, which on
+   a departure board is content rather than decoration. Depth comes from the
+   surface progression and 1px hairlines, never from shadow. */
 :root {
-  --bg:        #e4e5f0;
+  --bg:        #ffffff;
   --surface:   #ffffff;
-  --surface-2: #eeeef8;
-  --border:    #dddded;
-  --border-2:  #cccce0;
+  --surface-2: #f6f6f6;
+  --border:    #e4e4e4;   /* hairline dividers */
+  --border-2:  #767676;   /* input + control outlines */
+  --band:      #000000;   /* nav / footer / structural bands */
+  --on-band:   #ffffff;
 
-  --text:   #0d0d1a;
-  --text-2: #5a5a73;
-  --text-3: #797194;
+  --text:   #000000;
+  --text-2: #5e5e5e;
+  --text-3: #767676;
 
-  /* Status colours follow airfield ground lighting, which already has a
-     standard vocabulary for exactly these states: threshold green, taxiway
-     blue, caution amber, stop-bar red. Each value is the darkest step that
-     still clears 4.5:1 against its own 10% tint — the previous Tailwind
-     defaults failed AA on four of five badges in this theme. */
-  --green:     #097b3e;
-  --green-dim: rgba(9, 123, 62, 0.10);
-  --red:       #ce1c34;
-  --red-dim:   rgba(206, 28, 52, 0.10);
-  --red-tint:  rgba(206, 28, 52, 0.04);
-  --blue:      #1568d5;
-  --blue-dim:  rgba(21, 104, 213, 0.10);
-  --amber:     #9e5905;
-  --amber-dim: rgba(158, 89, 5, 0.10);
-  /* Brand accent, never a status — so a countdown chip never reads as a state.
-     Teal sits 31 degrees off the taxiway blue, far enough to stay distinct from
-     the Boarding badge while still reading as instrumentation rather than as
-     one of the four signal colours. */
-  --accent:     #0a7480;
-  --accent-dim: rgba(10, 116, 128, 0.10);
+  /* Flight state. Kept deliberately desaturated so it reads as information on
+     a monochrome page rather than as UI chrome competing for attention. */
+  --green:     #0f6b3d;
+  --green-dim: #eaf3ee;
+  --red:       #b3261e;
+  --red-dim:   #fbeceb;
+  --red-tint:  #fdf6f5;
+  --blue:      #1a4fa0;
+  --blue-dim:  #eaeff8;
+  --amber:     #8a5200;
+  --amber-dim: #f7f0e6;
+  --accent:    #000000;   /* brand actions are black, like every other control */
+  --accent-dim:#f0f0f0;
 
   --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --r-card:  8px;
+  --r-pill:  9999px;
+  --page:    1200px;
 }
 
-/* ── Dark theme (data-theme="dark" set by JS) ────────── */
+/* ── Dark theme ────────────────────────────────────────
+   The reference system is light-only, so dark is treated as a strict inversion
+   of the same discipline rather than a different design: one surface step, the
+   same hairlines, the same flat surfaces. */
 html[data-theme="dark"] {
-  --bg:        #0c0c11;
-  --surface:   #13131a;
-  --surface-2: #1a1a24;
-  --border:    #222230;
-  --border-2:  #2c2c3e;
+  --bg:        #000000;
+  --surface:   #0a0a0a;
+  --surface-2: #141414;
+  --border:    #262626;
+  --border-2:  #8a8a8a;
+  --band:      #000000;
+  --on-band:   #ffffff;
 
-  --text:   #eeeef8;
-  --text-2: #9a9abb;
-  --text-3: #7c7c99;
+  --text:   #ffffff;
+  --text-2: #b0b0b0;
+  --text-3: #8a8a8a;
 
-  --green:     #35d98a;
-  --green-dim: rgba(53, 217, 138, 0.12);
-  --red:       #ea6678;
-  --red-dim:   rgba(234, 102, 120, 0.12);
-  --red-tint:  rgba(234, 102, 120, 0.05);
-  --blue:      #4f94ee;
-  --blue-dim:  rgba(79, 148, 238, 0.12);
-  --amber:     #f2a03c;
-  --amber-dim: rgba(242, 160, 60, 0.12);
-  --accent:     #45bcca;
-  --accent-dim: rgba(69, 188, 202, 0.12);
+  --green:     #4ec97f;
+  --green-dim: #10241a;
+  --red:       #ff7a70;
+  --red-dim:   #2a1512;
+  --red-tint:  #150c0b;
+  --blue:      #79a9f0;
+  --blue-dim:  #121c2c;
+  --amber:     #e0a44a;
+  --amber-dim: #241c0e;
+  --accent:    #ffffff;
+  --accent-dim:#1c1c1c;
 }
 
 *, *::before, *::after {
@@ -96,7 +105,7 @@ html {
   background: var(--bg);
   color: var(--text);
   color-scheme: light;
-  font-family: 'Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04';
   font-size: 16px;
   line-height: 1.5;
@@ -139,7 +148,6 @@ body {
   border-radius: 50%;
   background: var(--surface);
   border: 1px solid var(--border-2);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
   color: var(--text-3);
   opacity: 0;
   transform: translateX(-50%) translateY(0);
@@ -161,20 +169,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: calc(0.875rem + var(--safe-top)) 1rem 0.875rem;
-  background: rgba(228, 229, 240, 0.9);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  padding-block: calc(0.75rem + var(--safe-top)) 0.75rem;
+  padding-inline: max(1rem, calc(50vw - (var(--page) / 2)));
+  margin-inline: calc(50% - 50vw);
+  background: var(--band);
+  color: var(--on-band);
+  min-height: 56px;
 }
 
-html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .header-brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
+.header .brand-icon { color: var(--on-band); }
 
 .brand-icon {
   width: 20px;
@@ -184,15 +194,16 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 }
 
 .brand-name {
-  font-size: 0.9375rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--text);
+  letter-spacing: -0.01em;
+  color: var(--on-band);
 }
 
+/* No chromatic accent in the chrome — the wordmark separates by weight */
 .brand-aero {
-  color: var(--accent);
-  font-weight: 500;
+  color: var(--on-band);
+  font-weight: 400;
 }
 
 .header-right {
@@ -208,10 +219,10 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--green);
-  background: var(--green-dim);
-  padding: 0.2rem 0.5rem;
-  border-radius: 9999px;
+  color: var(--band);
+  background: var(--on-band);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--r-pill);
 }
 
 .live-dot {
@@ -229,8 +240,8 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .last-updated {
   font-family: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.6875rem;
-  color: var(--text-3);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
   font-variant-numeric: tabular-nums;
 }
 
@@ -240,20 +251,19 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   justify-content: center;
   width: 34px;
   height: 34px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-2);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--r-pill);
+  color: var(--on-band);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 140ms var(--ease-out), color 140ms var(--ease-out),
-              border-color 140ms var(--ease-out), transform 160ms var(--ease-out);
+  transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
 
-.theme-btn:active { transform: scale(0.88); }
+.theme-btn:active { background: rgba(255,255,255,0.18); }
 
-#sound-btn.is-on { color: var(--accent); border-color: var(--accent); }
+#sound-btn.is-on { background: var(--on-band); color: var(--band); border-color: var(--on-band); }
 
 /* Matches .theme-btn, but sized to its own label and with the native
    select chrome stripped so the two controls read as a pair */
@@ -261,11 +271,11 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   appearance: none;
   -webkit-appearance: none;
   height: 34px;
-  padding: 0 0.5rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-2);
+  padding: 0 0.625rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--r-pill);
+  color: var(--on-band);
   font-family: inherit;
   font-size: 0.6875rem;
   font-weight: 700;
@@ -278,14 +288,14 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   -webkit-tap-highlight-color: transparent;
 }
 
-.lang-select:active { transform: scale(0.88); }
+.lang-select:active { background: rgba(255,255,255,0.18); }
 
 @media (hover: hover) and (pointer: fine) {
-  .lang-select:hover { background: var(--surface); color: var(--text); border-color: var(--border-2); }
+  .lang-select:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.5); }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .theme-btn:hover { background: var(--surface); color: var(--text); border-color: var(--border-2); }
+  .theme-btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.5); }
 }
 
 /* ── Airport Selector ────────────────────────────────── */
@@ -299,7 +309,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
+  border-radius: var(--r-card);
   padding: 0.625rem 0.875rem;
   font-size: 1rem; /* ≥16px so iOS doesn't zoom on focus */
   font-weight: 500;
@@ -317,7 +327,6 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .airport-select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 /* ── Tabs ────────────────────────────────────────────── */
@@ -340,7 +349,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   padding: 0.5rem 0.75rem;
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--r-card);
   color: var(--text-2);
   font-size: 0.875rem;
   font-weight: 500;
@@ -357,18 +366,16 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 }
 
 .tab.active .tab-icon { opacity: 1; }
-.tab.active { color: var(--text); }
-.tab:active { transform: scale(0.97); }
+.tab.active { color: var(--on-band); }
+.tab:active { opacity: 0.7; }
 
 .tab-indicator {
   position: absolute;
   bottom: 0.5rem;
-  left: 1rem;
+  left: 0;
   height: calc(100% - 1rem);
-  background: var(--surface);
-  border-radius: 6px;
-  border: 1px solid var(--border-2);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: var(--band);
+  border-radius: var(--r-card);
   transition: transform 180ms var(--ease-out), width 180ms var(--ease-out);
   pointer-events: none;
 }
@@ -398,7 +405,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--r-card);
   padding: 0.5rem 2.25rem 0.5rem 2.125rem;
   font-size: 1rem; /* ≥16px so iOS doesn't zoom on focus */
   font-family: inherit;
@@ -412,7 +419,6 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .search-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
   background: var(--surface);
 }
 
@@ -427,7 +433,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   color: var(--text-3);
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-card);
   line-height: 0;
   transition: color 150ms var(--ease-out);
   -webkit-tap-highlight-color: transparent;
@@ -455,7 +461,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .sort-pill {
   flex-shrink: 0;
   padding: 0.4375rem 0.875rem;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--border-2);
   background: transparent;
   color: var(--text-2);
@@ -470,9 +476,9 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 }
 
 .sort-pill.active {
-  background: var(--text);
-  color: var(--surface);
-  border-color: var(--text);
+  background: var(--band);
+  color: var(--on-band);
+  border-color: var(--band);
 }
 
 .sort-pill:active { transform: scale(0.97); }
@@ -514,17 +520,14 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
   display: flex;
   flex-direction: column;
   gap: 0.625rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 1px 2px rgba(13, 13, 26, 0.04);
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--r-card);
+  padding: 1.25rem;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   animation: card-in 240ms var(--ease-out) backwards;
-  transition: border-color 150ms var(--ease-out),
-              box-shadow 150ms var(--ease-out),
-              transform 150ms var(--ease-out);
+  transition: border-color 150ms var(--ease-out), background 150ms var(--ease-out);
 }
 
 @keyframes card-in {
@@ -545,7 +548,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .flight-row:nth-child(12)   { animation-delay: 242ms }
 .flight-row:nth-child(n+13) { animation-delay: 252ms }
 
-.flight-row:active { transform: scale(0.985); }
+.flight-row:active { background: var(--border); }
 
 .flight-row.status-arrived .fr-dest,
 .flight-row.status-departed .fr-dest { color: var(--text-2); }
@@ -553,13 +556,12 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .flight-row.status-delayed,
 .flight-row.status-info {
   box-shadow: inset 3px 0 0 var(--red);
-  background: linear-gradient(90deg, var(--red-tint) 0%, var(--surface) 55%);
-  border-color: rgba(206, 28, 52, 0.22);
+  background: var(--red-dim);
 }
 
 .flight-row.status-retimed {
   box-shadow: inset 3px 0 0 var(--amber);
-  border-color: rgba(158, 89, 5, 0.22);
+  background: var(--amber-dim);
 }
 
 .flight-row.is-pinned:not(.status-delayed):not(.status-info) {
@@ -567,20 +569,7 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .flight-row:hover {
-    border-color: var(--border-2);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transform: translateY(-1px);
-  }
-  .flight-row.status-delayed:hover,
-  .flight-row.status-info:hover {
-    box-shadow: inset 3px 0 0 var(--red), 0 2px 8px rgba(206, 28, 52, 0.09);
-    border-color: rgba(206, 28, 52, 0.32);
-    transform: translateY(-1px);
-  }
-  .flight-row.is-pinned:not(.status-delayed):not(.status-info):hover {
-    box-shadow: inset 3px 0 0 var(--accent), 0 2px 8px rgba(0, 0, 0, 0.06);
-  }
+  .flight-row:hover { border-color: var(--border-2); }
 }
 
 /* ── fr-head: airline identity row ──────────────────── */
@@ -593,14 +582,14 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 .fr-logo-wrap { flex-shrink: 0; line-height: 0; }
 .fr-logo-wrap .airline-chip             { display: none; }
 .fr-logo-wrap.logo-error .fr-logo       { display: none; }
-.fr-logo-wrap.logo-error .airline-chip  { display: inline-flex; width: 44px; height: 44px; border-radius: 8px; }
+.fr-logo-wrap.logo-error .airline-chip  { display: inline-flex; width: 44px; height: 44px; border-radius: var(--r-card); }
 
 .fr-logo {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: var(--r-card);
 }
 
 /* NAABOL serves light-on-dark logos — keep them on a dark chip in both themes */
@@ -664,7 +653,6 @@ img.fr-logo {
 
 .fr-time.red                          { color: var(--red); }
 .fr-time.amber                        { color: var(--amber); }
-.flight-row.status-boarding  .fr-time { color: var(--blue); }
 .flight-row.status-arrived   .fr-time { color: var(--text-3); }
 .flight-row.status-departed  .fr-time { color: var(--text-3); }
 .flight-row.status-cancelled .fr-time { color: var(--text-3); text-decoration: line-through; }
@@ -769,7 +757,7 @@ img.fr-logo {
   align-items: center;
   gap: 0.1rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-card);
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
@@ -816,7 +804,7 @@ img.fr-logo {
 .status-badge {
   flex-shrink: 0;
   padding: 0.175rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-card);
   font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -839,7 +827,7 @@ img.fr-logo {
 .rel-time {
   flex-shrink: 0;
   padding: 0.175rem 0.5rem;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   font-size: 0.6875rem;
   font-weight: 600;
   color: var(--accent);
@@ -912,7 +900,7 @@ img.fr-logo {
   margin: -0.25rem;
   cursor: pointer;
   color: var(--text-3);
-  border-radius: 4px;
+  border-radius: var(--r-card);
   line-height: 0;
   transition: color 150ms var(--ease-out), transform 160ms var(--ease-out);
   -webkit-tap-highlight-color: transparent;
@@ -951,7 +939,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 5px;
+  border-radius: var(--r-card);
   font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -967,7 +955,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 .airline-logo {
   width: 28px;
   height: 28px;
-  border-radius: 5px;
+  border-radius: var(--r-card);
   object-fit: contain;
   background: #191922;
   padding: 2px;
@@ -999,7 +987,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   width: 100%;
   max-width: 640px;
   background: var(--surface);
-  border-radius: 20px 20px 0 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
   border: 1px solid var(--border);
   border-bottom: none;
   padding: 0.75rem 1.25rem calc(2.5rem + env(safe-area-inset-bottom, 0px));
@@ -1052,7 +1040,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 }
 
 .modal-logo .airline-logo,
-.modal-logo .airline-chip { width: 48px; height: 48px; border-radius: 8px; }
+.modal-logo .airline-chip { width: 48px; height: 48px; border-radius: var(--r-card); }
 .modal-logo .airline-chip { font-size: 0.75rem; }
 
 .modal-flightnum {
@@ -1092,7 +1080,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   justify-content: center;
   gap: 0.45rem;
   padding: 0.6875rem 0.75rem;
-  border-radius: 10px;
+  border-radius: var(--r-card);
   border: 1px solid var(--border-2);
   background: var(--surface-2);
   color: var(--text);
@@ -1139,7 +1127,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 
 .row-gate {
   padding: 0.175rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-card);
   background: var(--surface-2);
   border: 1px solid var(--border);
   font-size: 0.75rem;
@@ -1237,7 +1225,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 .retry-btn {
   margin-top: 0.25rem;
   padding: 0.5rem 1.25rem;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   border: none;
   background: var(--accent);
   color: #fff;
@@ -1262,12 +1250,11 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   align-items: center;
   gap: 0.45rem;
   padding: 0.5rem 0.9375rem;
-  border-radius: 9999px;
+  border-radius: var(--r-pill);
   background: var(--text);
   color: var(--bg);
   font-size: 0.8125rem;
   font-weight: 600;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   animation: banner-in 260ms var(--ease-out) backwards;
 }
 
@@ -1293,7 +1280,6 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   border: 1px solid var(--border-2);
   color: var(--text-2);
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
   -webkit-tap-highlight-color: transparent;
   animation: fab-in 220ms var(--ease-out) backwards;
   transition: transform 160ms var(--ease-out), color 140ms var(--ease-out);
@@ -1313,13 +1299,13 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
 .skeleton-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--r-card);
   padding: 1rem;
   animation: skeleton-pulse 1.4s ease-in-out infinite;
 }
 
 .skeleton-line {
-  border-radius: 4px;
+  border-radius: var(--r-card);
   background: var(--border);
 }
 
@@ -1341,7 +1327,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
    position: fixed, so they stay out of the grid. */
 @media (min-width: 900px) {
   body {
-    max-width: 1240px;
+    max-width: var(--page);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
@@ -1392,7 +1378,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   .modal-sheet {
     max-width: 560px;
     max-height: 80dvh;
-    border-radius: 18px;
+    border-radius: var(--r-card);
     border-bottom: 1px solid var(--border);
     padding: 1.5rem 1.5rem 1.75rem;
     transform: translateY(10px) scale(0.985);
@@ -1421,7 +1407,7 @@ html[data-theme="dark"] .al-def { background: #252535; color: #9090b0; }
   width: 100%;
   background: #0a0a0c;
   border: 1px solid #23232b;
-  border-radius: 12px;
+  border-radius: var(--r-card);
   box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.6);
 }
 
