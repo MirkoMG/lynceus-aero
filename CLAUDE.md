@@ -84,7 +84,9 @@ Key response fields:
   column; the list omits the badge instead.
 
   `logUnmappedCode()` prints any code that turns up carrying text, which is how
-  code 2 was found
+  codes 2, 14, 20, 80, 84 and 85 were found. The last five all mean `INFORMES` /
+  `INFORMATION` — the airport telling passengers to ask at the desk. It is real
+  upstream data, not a rendering fault
 - `OBSERVACION` — status in Spanish
 - `OBSERVACION_INGLES` — status in English, right-padded with spaces. Spacing and
   hyphenation are inconsistent (`PRE-BOARDING`, `PRE BOARDING`, `PREEMBARCANDO`),

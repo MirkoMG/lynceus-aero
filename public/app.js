@@ -340,6 +340,13 @@ const STATUS_CODES = {
   72: { key: 'boarding',  label: 'stPreBoarding' },
   74: { key: 'confirmed', label: 'stConfirmed'   },
   82: { key: 'confirmed', label: 'stConfirmed'   },
+  // "INFORMES" / "INFORMATION" — the airport is telling you to ask at the desk.
+  // Five codes for one meaning, varying by airport and direction.
+  14: { key: 'info',      label: 'stInfo'        },
+  20: { key: 'info',      label: 'stInfo'        },
+  80: { key: 'info',      label: 'stInfo'        },
+  84: { key: 'info',      label: 'stInfo'        },
+  85: { key: 'info',      label: 'stInfo'        },
 };
 
 const reportedCodes = new Set();
@@ -1358,6 +1365,12 @@ function renderBoard(flights) {
         }</div>`).join('')}
       </div>`;
   }
+
+  // Headings are plain text, not flaps, so they are refreshed on every render
+  // rather than only when the board is rebuilt — otherwise a language change
+  // updates the tiles but leaves the headings stale.
+  const headEls = host.querySelectorAll('.flap-head');
+  cols.forEach((c, i) => { if (headEls[i]) headEls[i].textContent = t('col_' + c.key); });
 
   fitBoard(host.querySelector('.flap-board'), cols);
 
