@@ -70,6 +70,7 @@ const MESSAGES = {
     stOnTime: 'En Horario', stLanded: 'En Tierra', stConfirmed: 'Confirmado',
     stPreBoarding: 'Pre-Embarque', stBoarding: 'Embarcando', stRetimed: 'Nueva Hora',
     stDelayed: 'Demorado', stDeparted: 'Despegó', stCancelled: 'Cancelado', stInfo: 'Informes',
+    stScheduled: 'Programado',
     routeFrom: 'Desde', routeTo: 'Hacia', dirFrom: 'desde', dirTo: 'a',
     now: 'ahora', inMin: 'en {n} min', inHour: 'en {h}h', inHourMin: 'en {h}h {m}m',
     flights_one: '{n} vuelo', flights_other: '{n} vuelos',
@@ -112,6 +113,7 @@ const MESSAGES = {
     stOnTime: 'On Time', stLanded: 'Landed', stConfirmed: 'Confirmed',
     stPreBoarding: 'Pre-Boarding', stBoarding: 'Boarding', stRetimed: 'New Time',
     stDelayed: 'Delayed', stDeparted: 'Departed', stCancelled: 'Cancelled', stInfo: 'Information',
+    stScheduled: 'Scheduled',
     routeFrom: 'From', routeTo: 'To', dirFrom: 'from', dirTo: 'to',
     now: 'now', inMin: 'in {n} min', inHour: 'in {h}h', inHourMin: 'in {h}h {m}m',
     flights_one: '{n} flight', flights_other: '{n} flights',
@@ -154,6 +156,7 @@ const MESSAGES = {
     stOnTime: 'No Horário', stLanded: 'Em Solo', stConfirmed: 'Confirmado',
     stPreBoarding: 'Pré-Embarque', stBoarding: 'Embarcando', stRetimed: 'Novo Horário',
     stDelayed: 'Atrasado', stDeparted: 'Decolou', stCancelled: 'Cancelado', stInfo: 'Informações',
+    stScheduled: 'Programado',
     routeFrom: 'De', routeTo: 'Para', dirFrom: 'de', dirTo: 'para',
     now: 'agora', inMin: 'em {n} min', inHour: 'em {h}h', inHourMin: 'em {h}h {m}m',
     flights_one: '{n} voo', flights_other: '{n} voos',
@@ -315,11 +318,16 @@ const STATUS_MAP = {
 // separates cases the text collapses together.
 //
 // Only codes observed alongside real text are mapped here. Codes 11, 19, 76 and
-// 77 do occur, but always with an empty OBSERVACION, so their meaning is not
-// known — they deliberately fall through to the text and time heuristics rather
-// than being guessed at. logUnmappedCode() reports any code carrying text that
-// is missing from this table, which is how the remaining ones get decoded.
+// 77 stay out: across 159 records they are ALWAYS empty, ALWAYS on a flight
+// still in the future, and never on one whose time has moved — NAABOL's
+// "scheduled, nothing published yet" state. They split by direction like the
+// rest (11/77 arrivals, 19/76 departures), so there are two such states each
+// and nothing distinguishes them from outside. They fall through to 'scheduled'
+// on their own, which is already correct, so mapping them would add no
+// information. logUnmappedCode() reports any code carrying text that is missing
+// here, which is how 2 was found.
 const STATUS_CODES = {
+  2:  { key: 'boarding',  label: 'stPreBoarding' },
   4:  { key: 'delayed',   label: 'stDelayed'     },
   6:  { key: 'boarding',  label: 'stBoarding'    },
   8:  { key: 'on-time',   label: 'stOnTime'      },
@@ -1269,7 +1277,9 @@ function boardRowValues(flight) {
     flight: `${meta.iata || meta.abbr} ${(flight.NRO_VUELO || '').trim()}`,
     place:  isArrival ? route.inboundFrom : route.outboundTo,
     gate:   (flight.NRO_PUERTA || '').trim(),
-    status: statusLabel,
+    // A Solari column cannot be blank the way a card can just omit its badge,
+    // so the default state is named here rather than left empty.
+    status: statusLabel || t('stScheduled'),
     statusKey,
   };
 }

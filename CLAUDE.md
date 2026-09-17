@@ -68,10 +68,23 @@ Key response fields:
 - `COD_COMENTARIO` — **the authoritative status code**, and better data than the
   text: code 72 covers both `PRE-EMBARQUE` and `PREEMBARCANDO`, and codes 4/16/54
   all read `DEMORADO`, so the code separates cases the wording collapses.
-  `getStatus()` tries it first. Codes 11, 19, 76 and 77 occur with an empty
-  `OBSERVACION` and are **not yet decoded** — they are left unmapped on purpose
-  rather than guessed at, and `logUnmappedCode()` prints any code that turns up
-  carrying text so the table can be extended from real observations
+  `getStatus()` tries it first.
+
+  **Codes are direction-specific**: arrivals use 8/11/77/82, departures use
+  2/19/22/35/72/76. The same meaning therefore has different codes on the two
+  boards — `EN HORARIO` is 8 inbound but 35 or 22 outbound.
+
+  Codes **11 and 77 (arrivals) and 19 and 76 (departures)** are the
+  "scheduled, nothing published yet" state. Across 159 records they are always
+  empty, always on a flight still in the future, and never on one whose time has
+  moved. They are left unmapped because falling through to `scheduled` is already
+  correct. This is why a board can look empty: at El Alto at 01:00, 21 of 22
+  flights sit in that state, while Viru Viru has already been updated. The
+  split-flap view names it `PROGRAMADO` because a fixed grid cannot have a blank
+  column; the list omits the badge instead.
+
+  `logUnmappedCode()` prints any code that turns up carrying text, which is how
+  code 2 was found
 - `OBSERVACION` — status in Spanish
 - `OBSERVACION_INGLES` — status in English, right-padded with spaces. Spacing and
   hyphenation are inconsistent (`PRE-BOARDING`, `PRE BOARDING`, `PREEMBARCANDO`),
