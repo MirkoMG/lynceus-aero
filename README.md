@@ -16,7 +16,8 @@ A mobile-first flight information display for Bolivian airports, built on top of
 - Available in Spanish, English and Brazilian Portuguese
 - Opens on the airport nearest you, resolved from your IP at the edge
 - Responsive from phone to desktop — the board becomes a card grid on wide screens
-- Split-flap board view — the same data as a mechanical Solari departure board
+- Split-flap board view — the same data as a mechanical Solari departure board,
+  with optional synthesised flap clatter (off by default)
 - Light and dark theme
 - Auto-refreshes every 60 seconds (and on reconnect / returning to the tab)
 

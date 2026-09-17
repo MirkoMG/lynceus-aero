@@ -253,6 +253,8 @@ html[data-theme="dark"] .header { background: rgba(12, 12, 17, 0.9); }
 
 .theme-btn:active { transform: scale(0.88); }
 
+#sound-btn.is-on { color: var(--accent); border-color: var(--accent); }
+
 /* Matches .theme-btn, but sized to its own label and with the native
    select chrome stripped so the two controls read as a pair */
 .lang-select {

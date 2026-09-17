@@ -22,6 +22,8 @@ const ICONS = {
   refresh: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
   plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
   alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  volume2: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  volumeX: '<path d="M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z"/><path d="m16.5 14.5 5-5"/><path d="m16.5 9.5 5 5"/>',
   list: '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>',
   layoutGrid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   searchX: '<path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
@@ -79,7 +81,8 @@ const MESSAGES = {
     fullRoute: 'Ruta del avión',
     youAreHere: 'aquí', journeyApprox: 'estimado',
     col_time: 'hora', col_flight: 'vuelo', col_place: 'ciudad', col_gate: 'puerta', col_status: 'estado',
-    viewList: 'Ver como lista', viewBoard: 'Ver como tablero', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
+    viewList: 'Ver como lista', viewBoard: 'Ver como tablero',
+    soundOn: 'Activar sonido', soundOff: 'Silenciar', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
     journeyOnWay: 'En el aire', journeyBefore: 'Por salir', journeyDone: 'Completado',
     track: 'Ver en Flightradar24', share: 'Compartir',
     copied: 'Copiado ✓', copyFailed: 'No se pudo copiar',
@@ -120,7 +123,8 @@ const MESSAGES = {
     fullRoute: 'Aircraft route',
     youAreHere: 'here', journeyApprox: 'estimated',
     col_time: 'time', col_flight: 'flight', col_place: 'city', col_gate: 'gate', col_status: 'status',
-    viewList: 'View as list', viewBoard: 'View as board', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
+    viewList: 'View as list', viewBoard: 'View as board',
+    soundOn: 'Turn sound on', soundOff: 'Mute', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
     journeyOnWay: 'In the air', journeyBefore: 'Not departed', journeyDone: 'Completed',
     track: 'View on Flightradar24', share: 'Share',
     copied: 'Copied ✓', copyFailed: "Couldn't copy",
@@ -162,6 +166,7 @@ const MESSAGES = {
     youAreHere: 'aqui', journeyApprox: 'estimado',
     col_time: 'hora', col_flight: 'voo', col_place: 'cidade', col_gate: 'portao', col_status: 'estado',
     viewList: 'Ver como lista', viewBoard: 'Ver como painel',
+    soundOn: 'Ativar som', soundOff: 'Silenciar',
     thisFlight: 'Este voo', earlierToday: 'Antes, a mesma aeronave', laterToday: 'Depois, a mesma aeronave',
     journeyOnWay: 'No ar', journeyBefore: 'A partir', journeyDone: 'Concluído',
     track: 'Ver no Flightradar24', share: 'Compartilhar',
@@ -562,6 +567,8 @@ function readURLState() {
   if (view !== 'board' && view !== 'list') {
     try { view = localStorage.getItem(VIEW_KEY); } catch { view = null; }
   }
+  let sound = null;
+  try { sound = localStorage.getItem(SOUND_KEY); } catch { /* private mode */ }
   // A link's ?aero= wins, then a previously picked airport. Only when there is
   // neither is the visitor new enough for geolocation to be the right guess.
   const aero  = validAero(p.get('aero'));
@@ -572,6 +579,7 @@ function readURLState() {
     tipo:    p.get('tipo') === 'S' ? 'S' : 'L',
     sort:    SORT_MODES.includes(sort) ? sort : 'time',
     view:    view === 'board' ? 'board' : 'list',
+    sound:   sound === '1',
     search:  p.get('q') || '',
   };
 }
@@ -1124,6 +1132,78 @@ function renderCard(flight) {
 }
 
 
+
+// ── Flap sound ──────────────────────────────────────────
+// A flap landing is a broadband transient with a very fast decay, so it is
+// synthesised rather than shipped as an audio file: nothing to download, works
+// offline, and every click can be varied slightly so a cascade does not sound
+// like one sample on loop.
+//
+// Off by default — a board that starts clattering unannounced is not a nice
+// surprise — and the AudioContext is only created once the user asks for it,
+// since browsers refuse to start audio without a gesture anyway.
+const SOUND_KEY = 'lynceus_sound';
+let audio = null;
+
+function initAudio() {
+  if (audio) return audio;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  const ctx = new Ctx();
+
+  const master = ctx.createGain();
+  master.gain.value = 0.5;
+  master.connect(ctx.destination);
+
+  // A handful of pre-rendered noise bursts, cycled at random, is far cheaper
+  // than building a buffer per click during a full-board cascade.
+  const buffers = Array.from({ length: 6 }, () => {
+    const len = Math.floor(ctx.sampleRate * 0.035);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const decay = Math.pow(1 - i / len, 7);      // sharp attack, quick tail
+      data[i] = (Math.random() * 2 - 1) * decay;
+    }
+    return buf;
+  });
+
+  audio = { ctx, master, buffers };
+  return audio;
+}
+
+// Token bucket. A cascade can fire hundreds of flips a second; a real board is
+// a clatter, not a wall of white noise, so only so many clicks are let through
+// per window and the rest are dropped.
+let clickTokens = 0;
+let tokenStamp  = 0;
+
+function flapClick() {
+  if (!state.sound || !audio) return;
+  const { ctx, master, buffers } = audio;
+  if (ctx.state === 'suspended') return;
+
+  const now = performance.now();
+  if (now - tokenStamp > 90) { tokenStamp = now; clickTokens = 7; }
+  if (clickTokens <= 0) return;
+  clickTokens--;
+
+  const src = ctx.createBufferSource();
+  src.buffer = buffers[(Math.random() * buffers.length) | 0];
+  src.playbackRate.value = 0.85 + Math.random() * 0.4;
+
+  const band = ctx.createBiquadFilter();
+  band.type = 'bandpass';
+  band.frequency.value = 1500 + Math.random() * 1400;
+  band.Q.value = 0.9;
+
+  const gain = ctx.createGain();
+  gain.gain.value = 0.12 + Math.random() * 0.12;
+
+  src.connect(band).connect(gain).connect(master);
+  src.start();
+}
+
 // ── Split-flap board ────────────────────────────────────
 // A Solari board only ever carried capitals, digits and a little punctuation,
 // so text is folded to that set — accents included, which is why Potosí reads
@@ -1233,6 +1313,7 @@ function flipTile(tile, target, delay) {
     const tick = setInterval(() => {
       i = (i + 1) % FLAP_CHARS.length;
       tile.textContent = FLAP_CHARS[i];
+      flapClick();
       tile.classList.remove('flipping');
       void tile.offsetWidth;
       tile.classList.add('flipping');
@@ -1351,6 +1432,7 @@ const state = {
   tipo:    initURL.tipo,
   sort:    initURL.sort,
   view:    initURL.view,
+  sound:   initURL.sound,
   search:  initURL.search,
   flights: [],
   loading: false,
@@ -1421,14 +1503,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   applyStaticStrings();
 
-  const viewBtn = document.getElementById('view-btn');
+  const viewBtn  = document.getElementById('view-btn');
+  const soundBtn = document.getElementById('sound-btn');
+
+  const syncSoundBtn = () => {
+    soundBtn.innerHTML = icon(state.sound ? 'volume2' : 'volumeX', 15);
+    soundBtn.setAttribute('aria-label', t(state.sound ? 'soundOff' : 'soundOn'));
+    soundBtn.setAttribute('aria-pressed', String(state.sound));
+    soundBtn.classList.toggle('is-on', state.sound);
+    // The clatter only belongs to the board, so the control goes with it
+    soundBtn.hidden = state.view !== 'board';
+  };
+
   const syncViewBtn = () => {
     viewBtn.innerHTML = icon(state.view === 'board' ? 'list' : 'layoutGrid', 15);
     viewBtn.setAttribute('aria-label', t(state.view === 'board' ? 'viewList' : 'viewBoard'));
     viewBtn.setAttribute('aria-pressed', String(state.view === 'board'));
     document.body.classList.toggle('view-board', state.view === 'board');
+    syncSoundBtn();
   };
   syncViewBtn();
+
+  soundBtn.addEventListener('click', () => {
+    state.sound = !state.sound;
+    try { localStorage.setItem(SOUND_KEY, state.sound ? '1' : '0'); } catch { /* private mode */ }
+    if (state.sound) {
+      const a = initAudio();
+      // Browsers hand back a suspended context until a gesture resumes it, and
+      // resume() is async — clicking before it settles is silently dropped.
+      if (a && a.ctx.state === 'suspended') {
+        a.ctx.resume().then(flapClick, () => {});
+      } else {
+        flapClick();                     // confirm the toggle audibly
+      }
+    }
+    syncSoundBtn();
+  });
   viewBtn.addEventListener('click', () => {
     state.view = state.view === 'board' ? 'list' : 'board';
     try { localStorage.setItem(VIEW_KEY, state.view); } catch { /* private mode */ }
