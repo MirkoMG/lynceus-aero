@@ -972,11 +972,6 @@ img.fr-logo {
   letter-spacing: 0.01em;
 }
 
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
 
 
 /* ── Modal ───────────────────────────────────────────── */
@@ -1053,21 +1048,6 @@ img.fr-logo {
   margin-bottom: 1rem;
 }
 
-.modal-logo .airline-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: var(--r-card);
-  border: 1px solid var(--border-2);
-  background: transparent;
-  color: var(--text);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
 .modal-logo .airline-chip {
   display: inline-flex;
   align-items: center;
