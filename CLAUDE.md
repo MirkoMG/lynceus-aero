@@ -52,7 +52,17 @@ server.js      — local dev Express proxy (not deployed)
 - **Card layout** — Skyscanner-inspired: airline header row, large time → route line → destination, status + gate footer; the whole card opens the detail sheet
 - **Mobile gestures** — custom pull-to-refresh (native disabled via `overscroll-behavior-y: contain`) and swipe-down to dismiss the bottom sheet; both in `app.js`
 - **PWA** — installable; `sw.js` uses network-first with cache fallback so the last-seen board still opens offline
-- **Logos on dark chips** — NAABOL serves light-on-dark logos, so `<img>` logos always sit on a `#191922` chip in both themes
+- **Airlines are typographic, not logos** — NAABOL's logo artwork is
+  inconsistent: BoA and EcoJet are light ink on transparent (need a dark plate),
+  Copa and LATAM are dark ink (need a light one). No single chip colour serves
+  both, which is why everything previously sat on a black square. On the white
+  canvas that read as a row of heavy blocks, so the airline is set as its code
+  in a neutral outlined chip — uniform, achromatic, and one fewer image request
+  per card. `NAABOL_LOGO()` and the per-airline colour classes are gone
+
+- **Header collapses below 720px** — six controls needed 396px in a 393px
+  viewport. Sound, view, language and theme drop into a labelled panel behind a
+  hamburger; the live badge and clock stay in the bar
 - **Flightradar24 links** — must carry `rel="noopener noreferrer"` and
   `referrerpolicy="no-referrer"`. FR24 answers **451 Unavailable For Legal Reasons**
   when a request arrives with a `Referer` it does not expect; the same URL typed

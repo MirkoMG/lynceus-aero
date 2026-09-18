@@ -24,6 +24,7 @@ const ICONS = {
   alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   volume2: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
   volumeX: '<path d="M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z"/><path d="m16.5 14.5 5-5"/><path d="m16.5 9.5 5 5"/>',
+  menu: '<path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/>',
   list: '<path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/>',
   layoutGrid: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   searchX: '<path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
@@ -83,6 +84,7 @@ const MESSAGES = {
     youAreHere: 'aquí', journeyApprox: 'estimado',
     col_time: 'hora', col_flight: 'vuelo', col_place: 'ciudad', col_gate: 'puerta', col_status: 'estado',
     viewList: 'Ver como lista', viewBoard: 'Ver como tablero',
+    menu: 'Menú', labelSound: 'Sonido', labelView: 'Vista', labelLanguage: 'Idioma', labelTheme: 'Tema',
     soundOn: 'Activar sonido', soundOff: 'Silenciar', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
     journeyOnWay: 'En el aire', journeyBefore: 'Por salir', journeyDone: 'Completado',
     track: 'Ver en Flightradar24', share: 'Compartir',
@@ -126,6 +128,7 @@ const MESSAGES = {
     youAreHere: 'here', journeyApprox: 'estimated',
     col_time: 'time', col_flight: 'flight', col_place: 'city', col_gate: 'gate', col_status: 'status',
     viewList: 'View as list', viewBoard: 'View as board',
+    menu: 'Menu', labelSound: 'Sound', labelView: 'View', labelLanguage: 'Language', labelTheme: 'Theme',
     soundOn: 'Turn sound on', soundOff: 'Mute', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
     journeyOnWay: 'In the air', journeyBefore: 'Not departed', journeyDone: 'Completed',
     track: 'View on Flightradar24', share: 'Share',
@@ -169,6 +172,7 @@ const MESSAGES = {
     youAreHere: 'aqui', journeyApprox: 'estimado',
     col_time: 'hora', col_flight: 'voo', col_place: 'cidade', col_gate: 'portao', col_status: 'estado',
     viewList: 'Ver como lista', viewBoard: 'Ver como painel',
+    menu: 'Menu', labelSound: 'Som', labelView: 'Vista', labelLanguage: 'Idioma', labelTheme: 'Tema',
     soundOn: 'Ativar som', soundOff: 'Silenciar',
     thisFlight: 'Este voo', earlierToday: 'Antes, a mesma aeronave', laterToday: 'Depois, a mesma aeronave',
     journeyOnWay: 'No ar', journeyBefore: 'A partir', journeyDone: 'Concluído',
@@ -261,15 +265,15 @@ function toggleTheme() {
 
 // ── Airline metadata ────────────────────────────────────
 const AIRLINE_META = {
-  'BOLIVIANA DE AVIACION':             { abbr: 'BoA', cls: 'al-boa', iata: 'OB' },
+  'BOLIVIANA DE AVIACION':             { abbr: 'BoA', iata: 'OB' },
   'AVIANCA':                           { abbr: 'AV',  cls: 'al-av',  iata: 'AV' },
   'AEROVIAS DEL CONTINENTE AMERICANO': { abbr: 'AV',  cls: 'al-av',  iata: 'AV' },
   'LATAM':                             { abbr: 'LA',  cls: 'al-la',  iata: 'LA' },
   'LATAM AIRLINES':                    { abbr: 'LA',  cls: 'al-la',  iata: 'LA' },
-  'ECO JET':                           { abbr: 'ECO', cls: 'al-eco', iata: '8J' },
+  'ECO JET':                           { abbr: 'ECO', iata: '8J' },
   'GOL':                               { abbr: 'G3',  cls: 'al-g3',  iata: 'G3' },
   'COPA AIRLINES':                     { abbr: 'CM',  cls: 'al-cm',  iata: 'CM' },
-  'MINERA SAN CRISTOBAL':              { abbr: 'MSC', cls: 'al-msc', iata: null  },
+  'MINERA SAN CRISTOBAL':              { abbr: 'MSC', iata: null  },
 };
 
 // Lower = shown first when sort = 'delayed'
@@ -742,19 +746,13 @@ const STATUS_DOT = {
 };
 
 function getAirlineMeta(name) {
-  return AIRLINE_META[(name || '').trim().toUpperCase()] ?? { abbr: (name || '').slice(0, 3).toUpperCase(), cls: 'al-def' };
+  return AIRLINE_META[(name || '').trim().toUpperCase()] ?? { abbr: (name || '').slice(0, 3).toUpperCase() };
 }
 
 function formatTime(t) { return (t || '').trim() || '—'; }
 
-const NAABOL_LOGO = id => `https://fids.naabol.gob.bo/img/Aerolineas/${id}.png`;
-
-function airlineIdHtml(meta, idEmpresa) {
-  if (!idEmpresa) return `<span class="airline-chip ${meta.cls}">${meta.abbr}</span>`;
-  return `<div class="airline-id">
-    <img class="airline-logo" src="${NAABOL_LOGO(idEmpresa)}" alt="" aria-hidden="true" onerror="this.closest('.airline-id').classList.add('logo-error')">
-    <span class="airline-chip ${meta.cls}">${meta.abbr}</span>
-  </div>`;
+function airlineIdHtml(meta) {
+  return `<span class="airline-chip">${meta.abbr}</span>`;
 }
 
 function titleCase(str) {
@@ -914,7 +912,7 @@ function openModal(flight) {
 
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-head">
-      <div class="modal-logo">${airlineIdHtml(meta, flight.ID_EMPRESA)}</div>
+      <div class="modal-logo">${airlineIdHtml(meta)}</div>
       <div class="modal-flight-info">
         <div class="modal-flightnum">${meta.iata ? `${meta.iata} ` : ''}${flightNum}</div>
         <div class="modal-airline-name">${flight.NOMBRE_AEROLINEA || ''}</div>
@@ -1105,13 +1103,7 @@ function renderCard(flight) {
       data-flight="${flightNum}" data-id="${cardId}" tabindex="0"
       aria-label="${t('cardLabel', { airline: meta.abbr, n: flightNum, dir: isArrival ? t('dirFrom') : t('dirTo'), place: endpoint, status: statusLabel || t('scheduled') })}">
       <div class="fr-head">
-        ${flight.ID_EMPRESA
-          ? `<span class="fr-logo-wrap">
-               <img class="fr-logo" src="${NAABOL_LOGO(flight.ID_EMPRESA)}" alt="" aria-hidden="true"
-                 onerror="this.closest('.fr-logo-wrap').classList.add('logo-error')">
-               <span class="fr-logo airline-chip ${meta.cls}">${meta.abbr}</span>
-             </span>`
-          : `<span class="fr-logo airline-chip ${meta.cls}">${meta.abbr}</span>`}
+        <span class="fr-logo airline-chip">${meta.abbr}</span>
         <span class="fr-airline">${flight.NOMBRE_AEROLINEA || ''}</span>
         <span class="fr-flightnum">${flightNum}</span>
         <button class="pin-btn${pinned ? ' pinned' : ''}"
@@ -1527,6 +1519,26 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   applyStaticStrings();
 
+  // On a 393px phone the six header controls needed 396px on their own, so they
+  // collapse behind one button and reappear as a labelled panel.
+  const navToggle = document.getElementById('nav-toggle');
+  const navPanel  = document.getElementById('header-controls');
+  navToggle.innerHTML = icon('menu', 16);
+
+  const setNav = open => {
+    navPanel.classList.toggle('is-open', open);
+    navToggle.setAttribute('aria-expanded', String(open));
+    navToggle.innerHTML = icon(open ? 'x' : 'menu', 16);
+  };
+  navToggle.addEventListener('click', e => {
+    e.stopPropagation();
+    setNav(!navPanel.classList.contains('is-open'));
+  });
+  document.addEventListener('click', e => {
+    if (navPanel.classList.contains('is-open') && !navPanel.contains(e.target)) setNav(false);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setNav(false); });
+
   const viewBtn  = document.getElementById('view-btn');
   const soundBtn = document.getElementById('sound-btn');
 
@@ -1536,7 +1548,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     soundBtn.setAttribute('aria-pressed', String(state.sound));
     soundBtn.classList.toggle('is-on', state.sound);
     // The clatter only belongs to the board, so the control goes with it
-    soundBtn.hidden = state.view !== 'board';
+    document.getElementById('sound-row').hidden = state.view !== 'board';
   };
 
   const syncViewBtn = () => {
