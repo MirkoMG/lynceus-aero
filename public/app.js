@@ -85,6 +85,8 @@ const MESSAGES = {
     col_time: 'hora', col_flight: 'vuelo', col_place: 'ciudad', col_gate: 'puerta', col_status: 'estado',
     viewList: 'Ver como lista', viewBoard: 'Ver como tablero',
     menu: 'Menú', labelSound: 'Sonido', labelView: 'Vista', labelLanguage: 'Idioma', labelTheme: 'Tema',
+    footerAbout: 'Llegadas y salidas de los 14 aeropuertos de Bolivia.', footerData: 'Datos', footerProject: 'Proyecto',
+    footerLegal: 'Sitio no oficial. Los datos provienen de NAABOL y pueden cambiar sin aviso — confirma siempre con tu aerolínea.',
     soundOn: 'Activar sonido', soundOff: 'Silenciar', thisFlight: 'Este vuelo', earlierToday: 'Antes, el mismo avión', laterToday: 'Después, el mismo avión',
     journeyOnWay: 'En el aire', journeyBefore: 'Por salir', journeyDone: 'Completado',
     track: 'Ver en Flightradar24', share: 'Compartir',
@@ -129,6 +131,8 @@ const MESSAGES = {
     col_time: 'time', col_flight: 'flight', col_place: 'city', col_gate: 'gate', col_status: 'status',
     viewList: 'View as list', viewBoard: 'View as board',
     menu: 'Menu', labelSound: 'Sound', labelView: 'View', labelLanguage: 'Language', labelTheme: 'Theme',
+    footerAbout: 'Arrivals and departures for all 14 Bolivian airports.', footerData: 'Data', footerProject: 'Project',
+    footerLegal: 'Unofficial site. Data comes from NAABOL and can change without notice — always confirm with your airline.',
     soundOn: 'Turn sound on', soundOff: 'Mute', thisFlight: 'This flight', earlierToday: 'Earlier, same aircraft', laterToday: 'Later, same aircraft',
     journeyOnWay: 'In the air', journeyBefore: 'Not departed', journeyDone: 'Completed',
     track: 'View on Flightradar24', share: 'Share',
@@ -173,6 +177,8 @@ const MESSAGES = {
     col_time: 'hora', col_flight: 'voo', col_place: 'cidade', col_gate: 'portao', col_status: 'estado',
     viewList: 'Ver como lista', viewBoard: 'Ver como painel',
     menu: 'Menu', labelSound: 'Som', labelView: 'Vista', labelLanguage: 'Idioma', labelTheme: 'Tema',
+    footerAbout: 'Chegadas e partidas dos 14 aeroportos da Bolívia.', footerData: 'Dados', footerProject: 'Projeto',
+    footerLegal: 'Site não oficial. Os dados vêm da NAABOL e podem mudar sem aviso — confirme sempre com a sua companhia.',
     soundOn: 'Ativar som', soundOff: 'Silenciar',
     thisFlight: 'Este voo', earlierToday: 'Antes, a mesma aeronave', laterToday: 'Depois, a mesma aeronave',
     journeyOnWay: 'No ar', journeyBefore: 'A partir', journeyDone: 'Concluído',
@@ -948,13 +954,25 @@ function openModal(flight) {
 
   const shareBtn = document.getElementById('modal-share');
   shareBtn.addEventListener('click', async () => {
-    const text = `${tipoLabel} ${flight.NOMBRE_AEROLINEA || ''} ${flightNum} — ${route.stops.length ? route.stops.join(' → ') : route.label} — ${showActual ? actual : sched}${statusLabel ? ` (${statusLabel})` : ''} · ${airportLabel}`;
+    // Share the link alone. Passing both `text` and `url` to navigator.share
+    // lets some targets concatenate them, which is how a shared "link" came out
+    // as a URL with the whole flight summary glued onto its end. The link now
+    // carries ?flight=, so it says everything the text used to.
+    const link = new URL(window.location.href);
+    link.searchParams.set('flight', flight.IDDW_ITINERARIO || flightNum);
+    const url = link.toString();
+
     if (navigator.share) {
-      try { await navigator.share({ title: 'Lynceus Aero', text, url: location.href }); }
-      catch { /* user cancelled the share sheet */ }
+      try {
+        await navigator.share({
+          title: `${meta.iata ? meta.iata + ' ' : ''}${flightNum} · ${isArr ? route.inboundFrom : route.outboundTo}`,
+          url,
+        });
+      } catch { /* user cancelled the share sheet */ }
       return;
     }
-    const copied = await copyText(`${text}\n${location.href}`);
+
+    const copied = await copyText(url);
     shareBtn.querySelector('svg').style.display = 'none';
     shareBtn.lastChild.textContent = copied ? t('copied') : t('copyFailed');
   });
@@ -1847,6 +1865,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
+  // A ?flight= link opens straight onto that flight's sheet once the board has
+  // loaded. writeURLState never writes it back, so it clears on any interaction.
+  const openSharedFlight = () => {
+    const wanted = new URLSearchParams(window.location.search).get('flight');
+    if (!wanted) return;
+    const match = state.flights.find(f =>
+      String(f.IDDW_ITINERARIO) === wanted || (f.NRO_VUELO || '').trim() === wanted);
+    if (match) openModal(match);
+  };
+
   if (!state.airportExplicit) {
     const valid = new Set([...airportSelect.options].map(o => o.value));
     const detected = await detectAirport(valid);
@@ -1857,6 +1885,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  fetchFlights();
+  await fetchFlights();
+  openSharedFlight();
   scheduleRefresh();
 });

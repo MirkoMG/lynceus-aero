@@ -1,4 +1,4 @@
-const CACHE = 'lynceus-v4';
+const CACHE = 'lynceus-v5';
 const PRECACHE = ['/', '/style.css', '/app.js', '/icon.svg', '/manifest.webmanifest',
   '/fonts/inter-var.woff2', '/fonts/plex-mono-600.woff2',
   '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
