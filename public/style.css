@@ -132,7 +132,15 @@ body {
   max-width: 640px;
   margin: 0 auto;
   padding-bottom: var(--safe-bottom);
+  display: flex;
+  flex-direction: column;
 }
+
+/* The list absorbs any leftover height so the footer sits on the bottom edge
+   when there is little to show, and is pushed below the fold when there is a
+   lot. The fixed-position elements (pull-to-refresh, offline banner,
+   scroll-top, modal) are out of flow and unaffected. */
+.flights-list { flex: 1 0 auto; }
 
 /* ── Pull to refresh ─────────────────────────────────── */
 .ptr {
@@ -512,8 +520,11 @@ body {
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
+  align-content: start;
   gap: 0.625rem;
 }
+
+.flights-list > * { flex: 0 0 auto; }
 
 
 /* ── Header controls / mobile menu ───────────────────── */
@@ -1405,7 +1416,8 @@ img.fr-logo {
       "summary summary"
       "list    list"
       "footer  footer";
-    align-content: start;
+    /* the list row takes the slack, which pins the footer to the bottom */
+    grid-template-rows: auto auto auto auto 1fr auto;
   }
 
   .header        { grid-area: header; }
@@ -1437,6 +1449,8 @@ img.fr-logo {
   .flights-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    grid-auto-rows: min-content;
+    align-content: start;
     gap: 0.75rem;
     padding-top: 1rem;
   }
