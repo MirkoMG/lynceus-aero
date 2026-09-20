@@ -656,6 +656,13 @@ function boliviaDate(y, mo, d, h, mi, sec = 0) {
   return new Date(Date.UTC(y, mo - 1, d, h, mi, sec) - BOLIVIA_OFFSET_MIN * 60_000);
 }
 
+// Date → "HH:MM" on the Bolivian clock. getHours() would read the viewer's
+// timezone and put a derived time hours away from the board it sits beside.
+function formatBoliviaTime(date) {
+  const b = new Date(date.getTime() + BOLIVIA_OFFSET_MIN * 60_000);
+  return `${String(b.getUTCHours()).padStart(2, '0')}:${String(b.getUTCMinutes()).padStart(2, '0')}`;
+}
+
 // "2026-09-14 18:37:00.000" → Date. Hand-parsed because engines disagree on the
 // space-separated form, and Date would read it as the viewer's local time.
 function parseApiDateTime(str) {
@@ -985,7 +992,6 @@ function openModal(flight) {
     // The sheet may have been closed and reopened on another flight by now
     if (!j || !slot || slot.dataset.for !== String(flight.IDDW_ITINERARIO || flightNum)) return;
 
-    const fmt = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     const span = j.arriveAt - j.departAt;
     const pct  = Math.max(0, Math.min(1, (Date.now() - j.departAt) / (span || 1)));
     const phase = pct <= 0 ? t('journeyBefore') : pct >= 1 ? t('journeyDone') : t('journeyOnWay');
@@ -997,7 +1003,7 @@ function openModal(flight) {
       <div class="journey">
         <div class="journey-end">
           <span class="journey-code">${j.from.code}</span>
-          <span class="journey-time">${j.estimated ? '~' : ''}${fmt(j.departAt)}</span>
+          <span class="journey-time">${j.estimated ? '~' : ''}${formatBoliviaTime(j.departAt)}</span>
         </div>
         <div class="journey-track">
           <div class="journey-fill" style="width:${(pct * 100).toFixed(1)}%"></div>
@@ -1007,7 +1013,7 @@ function openModal(flight) {
         </div>
         <div class="journey-end">
           <span class="journey-code">${j.to.code}</span>
-          <span class="journey-time">${fmt(j.arriveAt)}</span>
+          <span class="journey-time">${formatBoliviaTime(j.arriveAt)}</span>
         </div>
       </div>`;
   });
