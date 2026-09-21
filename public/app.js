@@ -1328,13 +1328,13 @@ function stopFlap(tile) {
   flapTimers.delete(tile);
 }
 
-function flipTile(tile, target, delay) {
+function flipTile(tile, target, delay, animate = true) {
   stopFlap(tile);
   const from = FLAP_CHARS.indexOf(tile.dataset.v ?? ' ');
   const to   = FLAP_CHARS.indexOf(target);
   tile.dataset.v = target;
 
-  if (to < 0 || from === to ||
+  if (!animate || to < 0 || from === to ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     tile.textContent = target;
     return;
@@ -1368,7 +1368,7 @@ function renderBoard(flights) {
     `<div class="flap-head" style="--w:${c.width}">${t('col_' + c.key)}</div>`).join('');
 
   const existing = host.querySelector('.flap-board');
-  const rows = flights.slice(0, 18);
+  const rows = flights;
   const shape = `${rows.length}:${cols.map(c => c.key + c.width).join(',')}`;
 
   if (!existing || existing.dataset.shape !== shape) {
@@ -1391,16 +1391,30 @@ function renderBoard(flights) {
 
   fitBoard(host.querySelector('.flap-board'), cols);
 
-  const rowEls = [...host.querySelectorAll('.flap-row:not(.flap-header)')];
+  // A busy airport runs to 60+ rows. Cascading all of them would keep thousands
+  // of tile timers alive and take seconds to reach the bottom, so only rows on
+  // screen flip; the rest settle instantly and are already right when scrolled
+  // to. The stagger counts from the first visible row so the cascade starts at
+  // once however far down the board is scrolled.
+  const rowEls  = [...host.querySelectorAll('.flap-row:not(.flap-header)')];
+  const onScreen = rowEls.map(el => {
+    const { top, bottom } = el.getBoundingClientRect();
+    return bottom > 0 && top < window.innerHeight;
+  });
+  const firstVisible = Math.max(0, onScreen.indexOf(true));
+
   rows.forEach((flight, r) => {
     const values = boardRowValues(flight);
     const cells  = [...rowEls[r].children];
+    const rowDelay = (r - firstVisible) * 52;
     rowEls[r].dataset.status = values.statusKey;
     cols.forEach((col, c) => {
       const text  = flapText(values[col.key], col.width);
       const tiles = [...cells[c].children];
       tiles.forEach((tile, i) => {
-        if ((tile.dataset.v ?? ' ') !== text[i]) flipTile(tile, text[i], r * 52 + (c * 40 + i * 16));
+        if ((tile.dataset.v ?? ' ') !== text[i]) {
+          flipTile(tile, text[i], rowDelay + (c * 40 + i * 16), onScreen[r]);
+        }
       });
     });
   });
