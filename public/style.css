@@ -241,6 +241,10 @@ body {
   animation: pulse 2s ease-in-out infinite;
 }
 
+/* Serving a cached board, or the last refresh failed: the data is not live */
+.live-badge.is-stale { opacity: 0.55; }
+.live-badge.is-stale .live-dot { background: currentColor; animation: none; }
+
 @keyframes pulse {
   0%, 100% { opacity: 1;    transform: scale(1);    }
   50%       { opacity: 0.35; transform: scale(0.7); }

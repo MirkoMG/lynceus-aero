@@ -16,6 +16,15 @@ self.addEventListener('activate', e => {
   );
 });
 
+// A board replayed from cache is indistinguishable from a live one by its body,
+// so say so in a header — the page then shows the data's own time and drops the
+// live indicator instead of presenting an old board as current.
+function markCached(res) {
+  const headers = new Headers(res.headers);
+  headers.set('X-Lynceus-Cached', '1');
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
+
 // Network first, cache fallback — flight data stays fresh online,
 // and the last-seen board still opens without a connection.
 self.addEventListener('fetch', e => {
@@ -36,6 +45,6 @@ self.addEventListener('fetch', e => {
         return res;
       })
       .catch(() => caches.match(request, { ignoreSearch: request.url.includes('/api/') ? false : true })
-        .then(hit => hit || Promise.reject(new Error('offline'))))
+        .then(hit => hit ? markCached(hit) : Promise.reject(new Error('offline'))))
   );
 });

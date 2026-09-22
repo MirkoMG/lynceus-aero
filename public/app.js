@@ -377,6 +377,16 @@ const STATUS_LOOKUP = Object.entries(STATUS_MAP)
   .map(([k, v]) => [squashStatus(k), v])
   .sort((a, b) => b[0].length - a[0].length);
 
+// ── Flight identity ─────────────────────────────────────
+// NRO_VUELO is digits only and repeats across airlines — BoA 123 and Copa 123
+// can share a board — so it cannot key a card, a pin or a lookup.
+// IDDW_ITINERARIO is the feed's stable per-flight id; airline + number is only
+// a fallback for a record that somehow lacks one.
+function flightKey(flight) {
+  return String(flight.IDDW_ITINERARIO
+    || `${flight.ID_EMPRESA || ''}|${(flight.NRO_VUELO || '').trim()}`);
+}
+
 // ── Pin helpers ─────────────────────────────────────────
 function getPins() {
   try { return new Set(JSON.parse(localStorage.getItem(PINS_KEY)) || []); }
@@ -387,9 +397,9 @@ function savePins(set) {
   localStorage.setItem(PINS_KEY, JSON.stringify([...set]));
 }
 
-function togglePin(flightNum) {
+function togglePin(key) {
   const pins = getPins();
-  pins.has(flightNum) ? pins.delete(flightNum) : pins.add(flightNum);
+  pins.has(key) ? pins.delete(key) : pins.add(key);
   savePins(pins);
 }
 
@@ -513,7 +523,7 @@ async function loadJourney(flight, route, isArrival) {
     };
   }
 
-  const key = `${flight.IDDW_ITINERARIO || flight.NRO_VUELO}|${there.aero}`;
+  const key = `${flightKey(flight)}|${there.aero}`;
   if (journeyCache.has(key)) return journeyCache.get(key);
 
   const mine = actualAt(flight) || scheduledAt(flight);
@@ -711,13 +721,14 @@ function formatDelay(flight) {
   return m ? `+${h}h ${m}m` : `+${h}h`;
 }
 
-// Minutes from now until HH:MM, assuming the nearest day (API has no date)
+// Minutes from now until HH:MM, assuming the nearest day (API has no date).
+// HH:MM is Bolivian wall-clock, so "now" has to be read on the same clock.
 function relMinutes(t) {
   if (!t) return null;
   const [h, m] = t.split(':').map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return null;
-  const now = new Date();
-  let diff = h * 60 + m - (now.getHours() * 60 + now.getMinutes());
+  const now = new Date(Date.now() + BOLIVIA_OFFSET_MIN * 60_000);
+  let diff = h * 60 + m - (now.getUTCHours() * 60 + now.getUTCMinutes());
   if (diff < -720) diff += 1440;
   if (diff > 720)  diff -= 1440;
   return diff;
@@ -825,8 +836,8 @@ function filterFlights(flights) {
 // ── Sort ────────────────────────────────────────────────
 function sortFlights(flights, mode) {
   const pins = getPins();
-  const pinned = flights.filter(f => pins.has(f.NRO_VUELO));
-  const rest   = flights.filter(f => !pins.has(f.NRO_VUELO));
+  const pinned = flights.filter(f => pins.has(flightKey(f)));
+  const rest   = flights.filter(f => !pins.has(flightKey(f)));
 
   const toMin = t => { const [h, m] = (t || '00:00').split(':').map(Number); return h * 60 + m; };
 
@@ -943,7 +954,7 @@ function openModal(flight) {
       ${relTime ? `<span class="rel-time">${relTime}</span>` : ''}
       ${gate ? `<span class="row-gate">${t('gateShort', { n: gate })}</span>` : ''}
     </div>
-    <div id="modal-journey" data-for="${flight.IDDW_ITINERARIO || flightNum}"></div>
+    <div id="modal-journey" data-for="${flightKey(flight)}"></div>
     <p class="modal-section-label">${t('fullRoute')}</p>
     <div class="modal-route">${stopsHtml}</div>
     <div class="modal-actions">
@@ -966,7 +977,7 @@ function openModal(flight) {
     // as a URL with the whole flight summary glued onto its end. The link now
     // carries ?flight=, so it says everything the text used to.
     const link = new URL(window.location.href);
-    link.searchParams.set('flight', flight.IDDW_ITINERARIO || flightNum);
+    link.searchParams.set('flight', flightKey(flight));
     const url = link.toString();
 
     if (navigator.share) {
@@ -990,7 +1001,7 @@ function openModal(flight) {
   (wantJourney ? loadJourney(flight, route, true) : Promise.resolve(null)).then(j => {
     const slot = document.getElementById('modal-journey');
     // The sheet may have been closed and reopened on another flight by now
-    if (!j || !slot || slot.dataset.for !== String(flight.IDDW_ITINERARIO || flightNum)) return;
+    if (!j || !slot || slot.dataset.for !== flightKey(flight)) return;
 
     const span = j.arriveAt - j.departAt;
     const pct  = Math.max(0, Math.min(1, (Date.now() - j.departAt) / (span || 1)));
@@ -1113,8 +1124,8 @@ function renderCard(flight) {
   const isArrival   = state.tipo === 'L';
   const endpoint    = isArrival ? route.inboundFrom : route.outboundTo;
   const flightNum   = (flight.NRO_VUELO || '').trim();
-  const cardId      = flight.IDDW_ITINERARIO || flightNum;
-  const pinned      = getPins().has(flightNum);
+  const cardId      = flightKey(flight);
+  const pinned      = getPins().has(cardId);
   const dotCfg      = STATUS_DOT[statusKey];
   const relTime     = relTimeLabel(flight, statusKey);
 
@@ -1124,7 +1135,7 @@ function renderCard(flight) {
 
   return `
     <article class="flight-row status-${statusKey}${pinned ? ' is-pinned' : ''}" role="listitem"
-      data-flight="${flightNum}" data-id="${cardId}" tabindex="0"
+      data-id="${cardId}" tabindex="0"
       aria-label="${t('cardLabel', { airline: meta.abbr, n: flightNum, dir: isArrival ? t('dirFrom') : t('dirTo'), place: endpoint, status: statusLabel || t('scheduled') })}">
       <div class="fr-head">
         <span class="fr-logo airline-chip">${meta.abbr}</span>
@@ -1133,7 +1144,7 @@ function renderCard(flight) {
         <button class="pin-btn${pinned ? ' pinned' : ''}"
           aria-label="${pinned ? t('pinRemove', { n: flightNum }) : t('pinAdd', { n: flightNum })}"
           aria-pressed="${pinned}"
-          data-pin="${flightNum}">
+          data-pin="${cardId}">
           ${pinIcon}
         </button>
       </div>
@@ -1455,8 +1466,7 @@ async function paintCardProgress(flights) {
     if (token !== progressRun) return;   // a newer render superseded this pass
     if (!j) continue;
 
-    const id   = flight.IDDW_ITINERARIO || (flight.NRO_VUELO || '').trim();
-    const line = document.querySelector(`.fr-route-line[data-leg="${id}"]`);
+    const line = document.querySelector(`.fr-route-line[data-leg="${CSS.escape(flightKey(flight))}"]`);
     if (!line || line.dataset.painted) continue;
 
     const span = j.arriveAt - j.departAt;
@@ -1489,16 +1499,28 @@ const state = {
   sound:   initURL.sound,
   search:  initURL.search,
   flights: [],
-  loading: false,
 };
 
 let refreshTimer = null;
 let lastFetchAt  = 0;
+let fetchCtrl    = null;
+
+// The header clock is the time the data is from, not the time we last asked.
+// Offline, the service worker replays a cached board; stamping that with the
+// current time made an hours-old board look live.
+function showFreshness(dataAt, stale) {
+  if (dataAt) document.getElementById('last-updated').textContent = formatBoliviaTime(dataAt);
+  document.getElementById('live-badge').classList.toggle('is-stale', stale);
+}
 
 // ── Fetch ───────────────────────────────────────────────
 async function fetchFlights({ isRefresh = false } = {}) {
-  if (state.loading) return;
-  state.loading = true;
+  // A background refresh never interrupts a load already under way. A load the
+  // user asked for (new tab, new airport) cancels it instead: the old guard
+  // dropped the new request, leaving the Departures tab over arrivals data.
+  if (isRefresh && fetchCtrl) return;
+  fetchCtrl?.abort();
+  const ctrl = fetchCtrl = new AbortController();
 
   const list = document.getElementById('flights-list');
 
@@ -1509,20 +1531,25 @@ async function fetchFlights({ isRefresh = false } = {}) {
 
   try {
     const url = `/api/flights?aero=${encodeURIComponent(state.airport)}&tipo=${state.tipo}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    state.flights = await res.json();
+    const flights = await res.json();
+    if (ctrl !== fetchCtrl) return;
+
+    state.flights = flights;
     boardCache.clear();
     journeyCache.clear();
     lastFetchAt = Date.now();
     renderFlights(!isRefresh);
 
-    const now = new Date();
-    document.getElementById('last-updated').textContent =
-      `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const served = new Date(res.headers.get('Date'));
+    showFreshness(Number.isNaN(served.getTime()) ? new Date() : served,
+      res.headers.get('X-Lynceus-Cached') === '1');
 
   } catch (err) {
+    if (ctrl.signal.aborted) return;   // superseded by a newer load
+    showFreshness(null, true);
     if (!isRefresh) {
       list.innerHTML = `
         <div class="state-empty">
@@ -1533,7 +1560,7 @@ async function fetchFlights({ isRefresh = false } = {}) {
     }
     console.error(err);
   } finally {
-    state.loading = false;
+    if (fetchCtrl === ctrl) fetchCtrl = null;
   }
 }
 
@@ -1714,8 +1741,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  function openFlightModal(flightNum) {
-    const flight = state.flights.find(f => (f.NRO_VUELO || '').trim() === flightNum);
+  function openFlightModal(key) {
+    const flight = state.flights.find(f => flightKey(f) === key);
     if (flight) openModal(flight);
   }
 
@@ -1736,7 +1763,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const card = e.target.closest('.flight-row');
-    if (card) openFlightModal(card.dataset.flight);
+    if (card) openFlightModal(card.dataset.id);
   });
 
   // Keyboard: open card detail with Enter / Space
@@ -1745,7 +1772,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const card = e.target.closest('.flight-row');
     if (card && e.target === card) {
       e.preventDefault();
-      openFlightModal(card.dataset.flight);
+      openFlightModal(card.dataset.id);
     }
   });
 
@@ -1890,8 +1917,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const openSharedFlight = () => {
     const wanted = new URLSearchParams(window.location.search).get('flight');
     if (!wanted) return;
-    const match = state.flights.find(f =>
-      String(f.IDDW_ITINERARIO) === wanted || (f.NRO_VUELO || '').trim() === wanted);
+    // Bare flight numbers still resolve, for links shared before cards were keyed
+    const match = state.flights.find(f => flightKey(f) === wanted)
+      || state.flights.find(f => (f.NRO_VUELO || '').trim() === wanted);
     if (match) openModal(match);
   };
 
